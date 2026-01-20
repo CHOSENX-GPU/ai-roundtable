@@ -226,6 +226,7 @@ function getAITypeFromUrl(url) {
 }
 
 function updateTabStatus(aiType, connected) {
+  // Update normal mode status
   const statusEl = document.getElementById(`status-${aiType}`);
   const checkbox = document.getElementById(`target-${aiType}`);
 
@@ -234,21 +235,54 @@ function updateTabStatus(aiType, connected) {
     statusEl.className = 'status ' + (connected ? 'connected' : 'disconnected');
   }
 
+  // Update discussion mode status
+  const discStatusEl = document.getElementById(`disc-status-${aiType}`);
+  const discCheckbox = document.getElementById(`disc-participant-${aiType}`);
+
+  if (discStatusEl) {
+    discStatusEl.textContent = connected ? 'Connected' : 'Not found';
+    discStatusEl.className = 'status ' + (connected ? 'connected' : 'disconnected');
+  }
+
+  // Update mention button state
+  const mentionBtn = document.getElementById(`mention-${aiType}`);
+
   // Update connected tabs tracking
   if (connected) {
     connectedTabs[aiType] = true;
-    // Enable checkbox
+    // Enable normal mode checkbox
     if (checkbox) {
       checkbox.disabled = false;
       checkbox.parentElement.classList.remove('disabled');
     }
+    // Enable discussion mode checkbox
+    if (discCheckbox) {
+      discCheckbox.disabled = false;
+      discCheckbox.parentElement.classList.remove('disabled');
+    }
+    // Enable mention button
+    if (mentionBtn) {
+      mentionBtn.disabled = false;
+      mentionBtn.classList.remove('disabled');
+    }
   } else {
     delete connectedTabs[aiType];
-    // Disable checkbox and uncheck it
+    // Disable and uncheck normal mode checkbox
     if (checkbox) {
       checkbox.disabled = true;
       checkbox.checked = false;
       checkbox.parentElement.classList.add('disabled');
+    }
+    // Disable and uncheck discussion mode checkbox
+    if (discCheckbox) {
+      discCheckbox.disabled = true;
+      discCheckbox.checked = false;
+      discCheckbox.parentElement.classList.add('disabled');
+    }
+    // Disable mention button
+    if (mentionBtn) {
+      mentionBtn.disabled = true;
+      mentionBtn.classList.add('disabled');
     }
   }
 }
@@ -673,11 +707,22 @@ async function startDiscussion() {
     return;
   }
 
+  // Filter out disconnected AIs
+  const connectedParticipants = selected.filter(ai => connectedTabs[ai]);
+  if (connectedParticipants.length < 2) {
+    const disconnected = selected.filter(ai => !connectedTabs[ai]);
+    log(`无法开始讨论：${disconnected.join(', ')} 未连接。请先打开对应的 AI 页面。`, 'error');
+    return;
+  }
+
+  // Use only connected participants
+  const participants = connectedParticipants;
+
   // Initialize discussion state
   discussionState = {
     active: true,
     topic: topic,
-    participants: selected,
+    participants: participants,
     currentRound: 1,
     history: [],
     pendingResponses: new Set(selected),

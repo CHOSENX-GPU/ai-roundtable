@@ -101,9 +101,9 @@
           <div class="mention-group">
             <div class="mention-group-label">🇺🇸 US</div>
             <div class="mention-grid">
-              <button class="mention-btn claude" data-mention="@Claude">Claude</button>
-              <button class="mention-btn chatgpt" data-mention="@ChatGPT">ChatGPT</button>
-              <button class="mention-btn gemini" data-mention="@Gemini">Gemini</button>
+              <button class="mention-btn claude" data-mention="@Claude" id="mention-claude">Claude</button>
+              <button class="mention-btn chatgpt" data-mention="@ChatGPT" id="mention-chatgpt">ChatGPT</button>
+              <button class="mention-btn gemini" data-mention="@Gemini" id="mention-gemini">Gemini</button>
             </div>
           </div>
 
@@ -111,11 +111,11 @@
           <div class="mention-group">
             <div class="mention-group-label">🇨🇳 CN</div>
             <div class="mention-grid">
-              <button class="mention-btn deepseek" data-mention="@DeepSeek">DeepSeek</button>
-              <button class="mention-btn qwen" data-mention="@Qwen">Qwen</button>
-              <button class="mention-btn kimi" data-mention="@Kimi">Kimi</button>
-              <button class="mention-btn doubao" data-mention="@Doubao">Doubao</button>
-              <button class="mention-btn chatglm" data-mention="@ChatGLM">ChatGLM</button>
+              <button class="mention-btn deepseek" data-mention="@DeepSeek" id="mention-deepseek">DeepSeek</button>
+              <button class="mention-btn qwen" data-mention="@Qwen" id="mention-qwen">Qwen</button>
+              <button class="mention-btn kimi" data-mention="@Kimi" id="mention-kimi">Kimi</button>
+              <button class="mention-btn doubao" data-mention="@Doubao" id="mention-doubao">Doubao</button>
+              <button class="mention-btn chatglm" data-mention="@ChatGLM" id="mention-chatglm">ChatGLM</button>
             </div>
           </div>
         </div>
@@ -145,57 +145,53 @@
     <div id="discussion-mode" class="hidden">
       <section class="discussion-setup" id="discussion-setup">
         <h3>开始讨论</h3>
-        <div class="participant-select">
-          <label>参与者：</label>
 
-          <!-- 美国 AI -->
-          <div class="participant-group">
-            <div class="participant-group-label">🇺🇸 美国 AI</div>
-            <div class="participant-grid">
-              <label class="participant-option">
-                <input type="checkbox" name="participant" value="claude" checked>
-                <span class="target-name claude">Claude</span>
-              </label>
-              <label class="participant-option">
-                <input type="checkbox" name="participant" value="chatgpt" checked>
-                <span class="target-name chatgpt">ChatGPT</span>
-              </label>
-              <label class="participant-option">
-                <input type="checkbox" name="participant" value="gemini">
-                <span class="target-name gemini">Gemini</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- 中国 AI -->
-          <div class="participant-group">
-            <div class="participant-group-label">🇨🇳 中国 AI</div>
-            <div class="participant-grid">
-              <label class="participant-option">
-                <input type="checkbox" name="participant" value="deepseek">
-                <span class="target-name deepseek">DeepSeek</span>
-              </label>
-              <label class="participant-option">
-                <input type="checkbox" name="participant" value="qwen">
-                <span class="target-name qwen">Qwen</span>
-              </label>
-              <label class="participant-option">
-                <input type="checkbox" name="participant" value="kimi">
-                <span class="target-name kimi">Kimi</span>
-              </label>
-              <label class="participant-option">
-                <input type="checkbox" name="participant" value="doubao">
-                <span class="target-name doubao">Doubao</span>
-              </label>
-              <label class="participant-option">
-                <input type="checkbox" name="participant" value="chatglm">
-                <span class="target-name chatglm">ChatGLM</span>
-              </label>
-            </div>
-          </div>
-
-          <p class="hint">请选择 2 位参与者</p>
+        <!-- Discussion AI Selection - Same Layout as Normal Mode -->
+        <div class="ai-grid">
+          <label class="target-label compact" id="disc-target-claude">
+            <input type="checkbox" name="participant" value="claude" id="disc-participant-claude" checked>
+            <span class="target-name claude">Claude</span>
+            <span class="status" id="disc-status-claude">-</span>
+          </label>
+          <label class="target-label compact" id="disc-target-chatgpt">
+            <input type="checkbox" name="participant" value="chatgpt" id="disc-participant-chatgpt" checked>
+            <span class="target-name chatgpt">ChatGPT</span>
+            <span class="status" id="disc-status-chatgpt">-</span>
+          </label>
+          <label class="target-label compact" id="disc-target-gemini">
+            <input type="checkbox" name="participant" value="gemini" id="disc-participant-gemini">
+            <span class="target-name gemini">Gemini</span>
+            <span class="status" id="disc-status-gemini">-</span>
+          </label>
+          <label class="target-label compact" id="disc-target-deepseek">
+            <input type="checkbox" name="participant" value="deepseek" id="disc-participant-deepseek">
+            <span class="target-name deepseek">DeepSeek</span>
+            <span class="status" id="disc-status-deepseek">-</span>
+          </label>
+          <label class="target-label compact" id="disc-target-qwen">
+            <input type="checkbox" name="participant" value="qwen" id="disc-participant-qwen">
+            <span class="target-name qwen">Qwen</span>
+            <span class="status" id="disc-status-qwen">-</span>
+          </label>
+          <label class="target-label compact" id="disc-target-kimi">
+            <input type="checkbox" name="participant" value="kimi" id="disc-participant-kimi">
+            <span class="target-name kimi">Kimi</span>
+            <span class="status" id="disc-status-kimi">-</span>
+          </label>
+          <label class="target-label compact" id="disc-target-doubao">
+            <input type="checkbox" name="participant" value="doubao" id="disc-participant-doubao">
+            <span class="target-name doubao">Doubao</span>
+            <span class="status" id="disc-status-doubao">-</span>
+          </label>
+          <label class="target-label compact" id="disc-target-chatglm">
+            <input type="checkbox" name="participant" value="chatglm" id="disc-participant-chatglm">
+            <span class="target-name chatglm">ChatGLM</span>
+            <span class="status" id="disc-status-chatglm">-</span>
+          </label>
         </div>
+
+        <p class="hint">请选择 2 位参与者</p>
+
         <textarea id="discussion-topic" placeholder="输入讨论主题...&#10;&#10;示例：微服务架构和单体架构各有什么优缺点？" rows="4"></textarea>
         <button id="start-discussion-btn">开始讨论</button>
       </section>

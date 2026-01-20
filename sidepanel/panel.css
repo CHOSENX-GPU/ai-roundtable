@@ -322,9 +322,22 @@ header .subtitle {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
 }
 
-.mention-btn:hover {
-  border-color: var(--accent-blue);
-  color: white;
+.mention-btn:disabled,
+.mention-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.mention-btn:disabled:hover,
+.mention-btn.disabled:hover {
+  background: linear-gradient(135deg, rgba(80, 80, 100, 0.7), rgba(50, 50, 70, 0.8));
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #E0E0E0;
+  transform: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* Styling specific mentions */
@@ -487,58 +500,7 @@ footer a {
   color: var(--text-primary);
 }
 
-.participant-select {
-  margin-bottom: 16px;
-}
-
-.participant-select>label {
-  display: block;
-  font-size: 13px;
-  color: var(--text-secondary);
-  margin-bottom: 8px;
-}
-
-.participant-group {
-  margin-bottom: 12px;
-}
-
-.participant-group-label {
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
-  text-transform: uppercase;
-}
-
-.participant-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.participant-option {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
-  background: var(--glass-surface);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.participant-option:hover {
-  background: rgba(60, 60, 62, 0.8);
-}
-
-.participant-option:has(input:checked) {
-  background: rgba(10, 132, 255, 0.15);
-  border-color: var(--accent-blue);
-}
-
-.participant-option input[type="checkbox"] {
-  accent-color: var(--accent-blue);
-}
+/* Discussion mode now uses the same .ai-grid layout as normal mode */
 
 .hint {
   font-size: 11px;
