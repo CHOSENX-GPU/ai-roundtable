@@ -209,7 +209,10 @@
     }
 
     let lastCapturedContent = '';
+    let lastCapturedHash = '';
     let isCapturing = false;
+    let lastCaptureTime = 0;
+    const CAPTURE_COOLDOWN = 3000; // 3 seconds cooldown
 
     function checkForResponse(node) {
         if (isCapturing) return;
@@ -240,8 +243,8 @@
         let previousContent = '';
         let stableCount = 0;
         const maxWait = 600000;  // 10 minutes
-        const checkInterval = 500;
-        const stableThreshold = 4;  // 2 seconds of stable content
+        const checkInterval = 400;  // Check slightly faster
+        const stableThreshold = 6;  // 2.4 seconds of stable content (increased for longer responses)
 
         const startTime = Date.now();
 
@@ -265,14 +268,25 @@
                 if (!isStreaming && currentContent === previousContent && currentContent.length > 0) {
                     stableCount++;
                     if (stableCount >= stableThreshold) {
-                        if (currentContent !== lastCapturedContent) {
+                        const currentHash = simpleHash(currentContent);
+                        const now = Date.now();
+
+                        // Check if content is different AND cooldown has passed
+                        if (currentContent !== lastCapturedContent &&
+                            currentHash !== lastCapturedHash &&
+                            (now - lastCaptureTime) > CAPTURE_COOLDOWN) {
                             lastCapturedContent = currentContent;
+                            lastCapturedHash = currentHash;
+                            lastCaptureTime = now;
+
                             safeSendMessage({
                                 type: 'RESPONSE_CAPTURED',
                                 aiType: AI_TYPE,
                                 content: currentContent
                             });
                             console.log('[AI Panel] Doubao response captured, length:', currentContent.length);
+                        } else if (currentHash === lastCapturedHash) {
+                            console.log('[AI Panel] Doubao duplicate content prevented, hash:', currentHash);
                         }
                         return;
                     }
@@ -288,22 +302,14 @@
     }
 
     function getLatestResponse() {
-        // Find the latest assistant message - Doubao specific
+        // Doubao specific - only use the most specific selector
         const messageSelectors = [
-            // Doubao (ByteDance) specific patterns
-            '.message-list .message.bot .message-content',
-            '.chat-message.bot .content',
-            '[class*="bot-message"] [class*="content"]',
-            '[class*="assistant"] [class*="markdown"]',
-            '[class*="bot-message"]',
-            '[class*="message-content"]',
-            '[class*="doubao-response"]',
-            '.markdown-body',
-            // Generic fallbacks - Doubao might use different structure
-            'main article:last-child .content',
-            'main div[class*="message"]:last-child',
-            // Very generic - find any large text block at the end
-            'main > div:last-child div[class*="message"]'
+            // Most specific: use flow-markdown-body with unique message container
+            'div[class*="message-block-container"]:last-child div[class*="flow-markdown-body"]',
+            // Fallback: any flow-markdown-body, but only the last one
+            'div[class*="flow-markdown-body"]:last-of-type',
+            // Emergency fallback
+            '[class*="markdown-body"]:last-of-type'
         ];
 
         let bestContent = null;
@@ -313,18 +319,20 @@
             try {
                 const messages = document.querySelectorAll(selector);
                 if (messages.length > 0) {
+                    // Get ONLY the last message
                     const lastMessage = messages[messages.length - 1];
                     const content = lastMessage.innerText.trim();
 
-                    // Keep the longest valid content
+                    // Validate content quality
                     if (content.length > maxLength && content.length > 20) {
                         maxLength = content.length;
                         bestContent = content;
-                        console.log('[AI Panel] Doubao found content with selector:', selector, 'length:', content.length);
+                        console.log('[AI Panel] Doubao found content with:', selector, 'len:', content.length);
+                        // Break after first successful match to avoid duplicates
+                        break;
                     }
                 }
             } catch (e) {
-                // Selector might be invalid, skip it
                 console.log('[AI Panel] Doubao selector failed:', selector, e.message);
             }
         }
@@ -334,8 +342,19 @@
             return bestContent;
         }
 
-        console.log('[AI Panel] Doubao could not find response - DOM structure may have changed');
+        console.log('[AI Panel] Doubao could not find response');
         return null;
+    }
+
+    // Simple hash function for content deduplication
+    function simpleHash(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return hash.toString(36);
     }
 
     // Utility functions
@@ -351,42 +370,11 @@
     }
 
     async function newConversation() {
-        // Find new chat button for Doubao
-        const newChatSelectors = [
-            'button:contains("新对话")',
-            'button:contains("新建")',
-            'button:contains("New")',
-            'a[href*="/new"]',
-            '[data-testid="new-chat-button"]'
-        ];
-
-        for (const selector of newChatSelectors) {
-            try {
-                let button = null;
-
-                if (selector.includes(':contains(')) {
-                    const tagName = selector.split(':')[0];
-                    const text = selector.match(/:contains\("([^"]+)"\)/)[1];
-                    const buttons = Array.from(document.querySelectorAll(tagName));
-                    button = buttons.find(btn => btn.textContent.includes(text));
-                } else {
-                    button = document.querySelector(selector);
-                }
-
-                if (button && isVisible(button)) {
-                    console.log('[AI Panel] Doubao found new chat button');
-                    button.click();
-                    await sleep(500);
-                    return;
-                }
-            } catch (e) {
-                continue;
-            }
-        }
-
-        // Fallback: reload page
-        console.log('[AI Panel] Doubao new chat button not found, reloading page');
-        window.location.reload();
+        // Direct navigation is most reliable
+        console.log('[AI Panel] Doubao: Starting new conversation via navigation');
+        await sleep(100);
+        window.location.href = 'https://www.doubao.com/chat/';
+        return true;
     }
 
     console.log('[AI Panel] Doubao content script loaded');
