@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Panel</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>AI 圆桌</h1>
+      <p class="subtitle">Multi-AI Roundtable</p>
+    </header>
+
+    <!-- Mode Switcher -->
+    <section class="mode-switcher">
+      <button class="mode-btn active" id="mode-normal">普通</button>
+      <button class="mode-btn" id="mode-discussion">讨论</button>
+    </section>
+
+    <!-- Normal Mode Content -->
+    <div id="normal-mode">
+      <section class="targets">
+        <!-- 美国 AI -->
+        <div class="ai-group">
+          <div class="ai-group-label">🇺🇸 US</div>
+          <div class="ai-grid">
+            <label class="target-label compact">
+              <input type="checkbox" id="target-claude" checked>
+              <span class="target-name claude">Claude</span>
+              <span class="status" id="status-claude">-</span>
+            </label>
+            <label class="target-label compact">
+              <input type="checkbox" id="target-chatgpt" checked>
+              <span class="target-name chatgpt">ChatGPT</span>
+              <span class="status" id="status-chatgpt">-</span>
+            </label>
+            <label class="target-label compact">
+              <input type="checkbox" id="target-gemini" checked>
+              <span class="target-name gemini">Gemini</span>
+              <span class="status" id="status-gemini">-</span>
+            </label>
+          </div>
+        </div>
+        <!-- 中国 AI -->
+        <div class="ai-group">
+          <div class="ai-group-label">🇨🇳 CN</div>
+          <div class="ai-grid">
+            <label class="target-label compact">
+              <input type="checkbox" id="target-deepseek">
+              <span class="target-name deepseek">DeepSeek</span>
+              <span class="status" id="status-deepseek">-</span>
+            </label>
+            <label class="target-label compact">
+              <input type="checkbox" id="target-qwen">
+              <span class="target-name qwen">Qwen</span>
+              <span class="status" id="status-qwen">-</span>
+            </label>
+            <label class="target-label compact">
+              <input type="checkbox" id="target-kimi">
+              <span class="target-name kimi">Kimi</span>
+              <span class="status" id="status-kimi">-</span>
+            </label>
+            <label class="target-label compact">
+              <input type="checkbox" id="target-doubao">
+              <span class="target-name doubao">豆包</span>
+              <span class="status" id="status-doubao">-</span>
+            </label>
+            <label class="target-label compact">
+              <input type="checkbox" id="target-chatglm">
+              <span class="target-name chatglm">ChatGLM</span>
+              <span class="status" id="status-chatglm">-</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="input-section">
+        <div class="action-buttons">
+          <select id="action-select" class="action-select">
+            <option value="">插入动作...</option>
+            <option value="evaluate">评价</option>
+            <option value="learn">借鉴</option>
+            <option value="critique">批评</option>
+            <option value="supplement">补充</option>
+            <option value="compare">对比</option>
+          </select>
+          <button class="shortcut-btn" id="mutual-btn" data-insert="/mutual ">/mutual</button>
+          <button class="shortcut-btn" id="cross-btn" data-insert="/cross ">/cross</button>
+          <button class="shortcut-btn" id="arrow-btn" data-insert=" <- "><-< /button>
+        </div>
+        <div class="mention-buttons">
+          <span class="mention-label">@</span>
+
+          <!-- 美国 AI -->
+          <div class="mention-group">
+            <div class="mention-group-label">🇺🇸 US</div>
+            <div class="mention-grid">
+              <button class="mention-btn claude" data-mention="@Claude">Claude</button>
+              <button class="mention-btn chatgpt" data-mention="@ChatGPT">ChatGPT</button>
+              <button class="mention-btn gemini" data-mention="@Gemini">Gemini</button>
+            </div>
+          </div>
+
+          <!-- 中国 AI -->
+          <div class="mention-group">
+            <div class="mention-group-label">🇨🇳 CN</div>
+            <div class="mention-grid">
+              <button class="mention-btn deepseek" data-mention="@DeepSeek">DeepSeek</button>
+              <button class="mention-btn qwen" data-mention="@Qwen">Qwen</button>
+              <button class="mention-btn kimi" data-mention="@Kimi">Kimi</button>
+              <button class="mention-btn doubao" data-mention="@豆包">豆包</button>
+              <button class="mention-btn chatglm" data-mention="@ChatGLM">ChatGLM</button>
+            </div>
+          </div>
+        </div>
+        <textarea id="message-input" placeholder="输入消息...&#10;&#10;互评: /mutual（基于当前回复）&#10;单向: @Claude 评价一下 @ChatGPT"
+          rows="6"></textarea>
+        <button id="send-btn">发送</button>
+      </section>
+
+      <section class="help">
+        <details>
+          <summary>命令帮助</summary>
+          <p class="help-subtitle">互评 /mutual（推荐）</p>
+          <ul>
+            <li><code>/mutual</code><br><small>让所有选中的 AI 互评当前回复</small></li>
+            <li><code>/mutual 重点分析优缺点</code><br><small>可加自定义评价提示</small></li>
+          </ul>
+          <p class="help-subtitle">单向引用</p>
+          <ul>
+            <li><code>@Claude 评价一下 @ChatGPT</code></li>
+            <li><code>/cross @Claude @Gemini <- @ChatGPT</code></li>
+          </ul>
+        </details>
+      </section>
+    </div><!-- end normal-mode -->
+
+    <!-- Discussion Mode Content -->
+    <div id="discussion-mode" class="hidden">
+      <section class="discussion-setup" id="discussion-setup">
+        <h3>开始讨论</h3>
+        <div class="participant-select">
+          <label>参与者：</label>
+
+          <!-- 美国 AI -->
+          <div class="participant-group">
+            <div class="participant-group-label">🇺🇸 美国 AI</div>
+            <div class="participant-grid">
+              <label class="participant-option">
+                <input type="checkbox" name="participant" value="claude" checked>
+                <span class="target-name claude">Claude</span>
+              </label>
+              <label class="participant-option">
+                <input type="checkbox" name="participant" value="chatgpt" checked>
+                <span class="target-name chatgpt">ChatGPT</span>
+              </label>
+              <label class="participant-option">
+                <input type="checkbox" name="participant" value="gemini">
+                <span class="target-name gemini">Gemini</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 中国 AI -->
+          <div class="participant-group">
+            <div class="participant-group-label">🇨🇳 中国 AI</div>
+            <div class="participant-grid">
+              <label class="participant-option">
+                <input type="checkbox" name="participant" value="deepseek">
+                <span class="target-name deepseek">DeepSeek</span>
+              </label>
+              <label class="participant-option">
+                <input type="checkbox" name="participant" value="qwen">
+                <span class="target-name qwen">Qwen</span>
+              </label>
+              <label class="participant-option">
+                <input type="checkbox" name="participant" value="kimi">
+                <span class="target-name kimi">Kimi</span>
+              </label>
+              <label class="participant-option">
+                <input type="checkbox" name="participant" value="doubao">
+                <span class="target-name doubao">豆包</span>
+              </label>
+              <label class="participant-option">
+                <input type="checkbox" name="participant" value="chatglm">
+                <span class="target-name chatglm">ChatGLM</span>
+              </label>
+            </div>
+          </div>
+
+          <p class="hint">请选择 2 位参与者</p>
+        </div>
+        <textarea id="discussion-topic" placeholder="输入讨论主题...&#10;&#10;示例：微服务架构和单体架构各有什么优缺点？" rows="4"></textarea>
+        <button id="start-discussion-btn">开始讨论</button>
+      </section>
+
+      <section class="discussion-active hidden" id="discussion-active">
+        <div class="discussion-header">
+          <div class="discussion-info">
+            <span class="round-badge" id="round-badge">第 1 轮</span>
+            <span class="participants-badge" id="participants-badge">Claude vs ChatGPT</span>
+          </div>
+          <button class="end-btn" id="end-discussion-btn">结束</button>
+        </div>
+        <div class="discussion-topic-display" id="topic-display"></div>
+        <div class="discussion-status" id="discussion-status">
+          等待初始回复...
+        </div>
+        <div class="discussion-interject">
+          <label>插话（同步发送给讨论双方）</label>
+          <textarea id="interject-input" placeholder="输入你想对双方说的话..."></textarea>
+          <div class="interject-actions">
+            <button id="interject-btn">发送给双方</button>
+          </div>
+        </div>
+        <div class="discussion-controls">
+          <button id="next-round-btn" disabled>下一轮</button>
+          <button id="generate-summary-btn" disabled>生成总结</button>
+        </div>
+      </section>
+
+      <section class="discussion-summary hidden" id="discussion-summary">
+        <h3>讨论总结</h3>
+        <div id="summary-content"></div>
+        <button id="new-discussion-btn">新讨论</button>
+      </section>
+    </div><!-- end discussion-mode -->
+
+    <section class="log">
+      <h3>活动日志</h3>
+      <div id="log-container"></div>
+    </section>
+
+    <footer class="copyright">
+      © 2025 <a href="https://axtonliu.ai" target="_blank">Axton Liu</a> · <a href="https://axtonliu.ai"
+        target="_blank">AI 精英学院</a>
+    </footer>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+
+</html>

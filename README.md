@@ -1,0 +1,190 @@
+# AI 圆桌 (AI Roundtable)
+
+![GitHub Repo stars](https://img.shields.io/github/stars/axtonliu/ai-roundtable?style=social)
+![GitHub forks](https://img.shields.io/github/forks/axtonliu/ai-roundtable?style=social)
+![License](https://img.shields.io/github/license/axtonliu/ai-roundtable)
+
+> **Forked from [axtonliu/ai-roundtable](https://github.com/axtonliu/ai-roundtable) with enhancements**
+
+让多个 AI 助手围桌讨论，交叉评价，深度协作
+
+**本版本修改内容：**
+- ✨ 新增中国 AI 支持：DeepSeek、通义千问（Qwen）、Kimi、豆包、智谱清言（ChatGLM）
+- 🔧 修复连接中断问题，添加动态刷新能力，提升长时间对话稳定性
+- 🌏 优化中国 AI 平台的适配体验
+
+**原项目特性保留：**
+
+**Developer Preview** - 这是开发者抢先版，功能可能变化，不保证向后兼容。
+
+**本地运行，数据不离开你的浏览器** - 无需 API Key，直接操作 AI 网页界面。
+
+**欢迎反馈** - 接受 Issue 和 PR；不承诺长期支持和兼容性。
+
+---
+
+一个 Chrome 扩展，让你像"会议主持人"一样，同时操控多个 AI（Claude、ChatGPT、Gemini），实现真正的 AI 圆桌会议。
+
+<!-- TODO: 添加 GIF 演示 -->
+<!-- ![Demo GIF](assets/demo.gif) -->
+
+## 核心特性
+
+- **统一控制台** - 通过 Chrome 侧边栏同时管理多个 AI
+- **多目标发送** - 一条消息同时发给多个 AI，对比回答
+- **互评模式** - 让所有 AI 互相评价，对等参与（/mutual 命令）
+- **交叉引用** - 让 Claude 评价 ChatGPT 的回答，或反过来
+- **Discussion Mode** - 两个 AI 就同一主题进行多轮深度讨论
+- **无需 API** - 直接操作网页界面，使用你现有的 AI 订阅
+
+## 安装
+
+### 开发者模式安装
+
+1. 下载或克隆本仓库
+2. 打开 Chrome，进入 `chrome://extensions/`
+3. 开启右上角「开发者模式」
+4. 点击「加载已解压的扩展程序」
+5. 选择本项目文件夹
+
+## 使用方法
+
+### 准备工作
+
+1. 打开 Chrome，登录以下 AI 平台（根据需要）：
+   - [Claude](https://claude.ai)
+   - [ChatGPT](https://chatgpt.com)
+   - [Gemini](https://gemini.google.com)
+
+2. 推荐使用 Chrome 的 Split Tab 功能，将 2 个 AI 页面并排显示
+
+3. 点击扩展图标，打开侧边栏控制台
+
+### Normal Mode（普通模式）
+
+**基本发送**
+1. 勾选要发送的目标 AI（Claude / ChatGPT / Gemini）
+2. 输入消息
+3. 按 Enter 或点击 Send 按钮
+
+**@ 提及语法**
+- 点击 @ 按钮快速插入 AI 名称
+- 或手动输入：`@Claude 你怎么看这个问题？`
+
+**互评（推荐）**
+
+基于当前已有的回复，让所有选中的 AI 互相评价：
+```
+/mutual
+/mutual 重点分析优缺点
+```
+
+用法：
+1. 先发送一个问题给多个 AI，等待它们各自回复
+2. 点击 `/mutual` 按钮或输入 `/mutual`
+3. 每个 AI 都会收到其他 AI 的回复并进行评价
+   - 2 AI：A 评价 B，B 评价 A
+   - 3 AI：A 评价 BC，B 评价 AC，C 评价 AB
+
+**交叉引用（单向）**
+
+两个 AI（自动检测）：
+```
+@Claude 评价一下 @ChatGPT
+```
+最后 @ 的是来源（被评价），前面的是目标（评价者）
+
+三个 AI（使用 /cross 命令）：
+```
+/cross @Claude @Gemini <- @ChatGPT 评价一下
+/cross @ChatGPT <- @Claude @Gemini 对比一下
+```
+
+**动作下拉菜单**：快速插入预设动作词（评价/借鉴/批评/补充/对比）
+
+### Discussion Mode（讨论模式）
+
+让两个 AI 就同一主题进行深度辩论：
+
+1. 点击顶部「Discussion」切换到讨论模式
+2. 选择 2 个参与讨论的 AI
+3. 输入讨论主题
+4. 点击「Start Discussion」
+
+**讨论流程**
+
+```
+Round 1: 两个 AI 各自阐述观点
+Round 2: 互相评价对方的观点
+Round 3: 回应对方的评价，深化讨论
+...
+Summary: 生成讨论总结
+```
+
+## 技术架构
+
+```
+ai-roundtable/
+├── manifest.json           # Chrome 扩展配置 (Manifest V3)
+├── background.js           # Service Worker 消息中转
+├── sidepanel/
+│   ├── panel.html         # 侧边栏 UI
+│   ├── panel.css          # 样式
+│   └── panel.js           # 控制逻辑
+├── content/
+│   ├── claude.js          # Claude 页面注入脚本
+│   ├── chatgpt.js         # ChatGPT 页面注入脚本
+│   └── gemini.js          # Gemini 页面注入脚本
+└── icons/                  # 扩展图标
+```
+
+## 隐私说明
+
+- **不上传任何内容** - 扩展完全在本地运行，不向任何服务器发送数据
+- **无遥测/日志采集** - 不收集使用数据、不追踪行为
+- **数据存储位置** - 仅使用浏览器本地存储（chrome.storage.local）
+- **无第三方服务** - 不依赖任何外部 API 或服务
+- **如何删除数据** - 卸载扩展即可完全清除，或在 Chrome 扩展设置中清除存储
+
+## 截图
+
+<!-- TODO: 添加截图 -->
+<!--
+| 安装后界面 | 选择目标模型 |
+|-----------|-------------|
+| ![](assets/screenshot-1.png) | ![](assets/screenshot-2.png) |
+
+| 互评结果 | 无需 API Key |
+|---------|-------------|
+| ![](assets/screenshot-3.png) | ![](assets/screenshot-4.png) |
+-->
+
+## 常见问题
+
+### Q: 安装后无法连接 AI 页面？
+**A:** 安装或更新扩展后，需要刷新已打开的 AI 页面。
+
+### Q: 交叉引用时提示"无法获取回复"？
+**A:** 确保源 AI 已经有回复。系统会获取该 AI 的最新一条回复。
+
+### Q: ChatGPT 回复很长时会超时吗？
+**A:** 不会。系统支持最长 10 分钟的回复捕获。
+
+## 已知限制
+
+- 依赖各 AI 平台的 DOM 结构，平台更新可能导致功能失效
+- Discussion Mode 固定 2 个参与者
+- 不支持 Claude Artifacts、ChatGPT Canvas 等特殊功能
+
+## 致谢
+
+本项目基于 [axtonliu/ai-roundtable](https://github.com/axtonliu/ai-roundtable) 进行开发，感谢原作者 Axton Liu 的杰出工作。
+
+## 许可证
+
+MIT License
+
+Copyright (c) 2025 Axton Liu (原项目)
+Copyright (c) 2025 [您的名字] (修改部分)
+
+详见 [LICENSE](LICENSE) 文件。
