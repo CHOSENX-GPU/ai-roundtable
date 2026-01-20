@@ -185,6 +185,6 @@ ai-roundtable/
 MIT License
 
 Copyright (c) 2025 Axton Liu (原项目)
-Copyright (c) 2025 [您的名字] (修改部分)
+Copyright (c) 2025 CHOSENX (修改部分)
 
 详见 [LICENSE](LICENSE) 文件。
