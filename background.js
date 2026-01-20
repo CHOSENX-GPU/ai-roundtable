@@ -119,7 +119,7 @@ async function ensureContentScriptAlive(aiType, tab) {
 }
 
 async function sendMessageToAI(aiType, message, retryCount = 0) {
-  const maxRetries = 2;
+  const maxRetries = 4; // Increased from 2 to 4
 
   try {
     // Find the tab for this AI
@@ -159,8 +159,9 @@ async function sendMessageToAI(aiType, message, retryCount = 0) {
 
     // Retry if connection error and haven't exceeded max retries
     if (retryCount < maxRetries && err.message.includes('Receiving end does not exist')) {
-      console.log('[AI Panel] Retrying send to', aiType, `attempt ${retryCount + 1}`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const waitTime = Math.min(1000 * Math.pow(2, retryCount), 3000); // Exponential backoff
+      console.log('[AI Panel] Retrying send to', aiType, `attempt ${retryCount + 1}, waiting ${waitTime}ms`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
       return sendMessageToAI(aiType, message, retryCount + 1);
     }
 

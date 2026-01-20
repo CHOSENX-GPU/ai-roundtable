@@ -15,6 +15,8 @@ const CROSS_REF_ACTIONS = {
 const messageInput = document.getElementById('message-input');
 const sendBtn = document.getElementById('send-btn');
 const logContainer = document.getElementById('log-container');
+const statusDot = document.getElementById('status-dot');
+const statusText = document.getElementById('status-text');
 
 // Track connected tabs
 const connectedTabs = {
@@ -52,6 +54,25 @@ function setupEventListeners() {
 
   // New chat button
   document.getElementById('new-chat-btn').addEventListener('click', handleNewChat);
+
+  // View Switching (Tabs)
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      // Update active tab
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+
+      // Switch views
+      const viewId = e.target.dataset.view; // 'main' or 'discussion'
+      document.querySelectorAll('.view-content').forEach(view => {
+        if (view.id === viewId + '-view') {
+          view.classList.remove('hidden');
+        } else {
+          view.classList.add('hidden');
+        }
+      });
+    });
+  });
 
   // Enter to send, Shift+Enter for new line (like ChatGPT)
   // But ignore Enter during IME composition (e.g., Chinese input)
@@ -133,6 +154,16 @@ function setupEventListeners() {
         log(`${message.aiType}: Message sent`, 'success');
       } else {
         log(`${message.aiType}: Failed - ${message.error}`, 'error');
+      }
+    } else if (message.type === 'NEW_CONVERSATION_RESULTS') {
+      // Handle new conversation results
+      const results = message.results || {};
+      for (const [aiType, result] of Object.entries(results)) {
+        if (result.success) {
+          log(`${aiType}: 新对话已开启`, 'success');
+        } else {
+          log(`${aiType}: 开启失败 - ${result.error || 'Unknown error'}`, 'error');
+        }
       }
     }
   });
@@ -379,7 +410,15 @@ async function handleCrossReference(parsed) {
       log(`Could not get ${sourceAI}'s response`, 'error');
       return;
     }
-    sourceResponses.push({ ai: sourceAI, content: response });
+
+    // Truncate if too long
+    let content = response;
+    const MAX_LENGTH = 3000;
+    if (content.length > MAX_LENGTH) {
+      content = content.substring(0, MAX_LENGTH) + '\n\n[内容已截断...]';
+    }
+
+    sourceResponses.push({ ai: sourceAI, content });
   }
 
   // Build the full message with XML tags for each source
@@ -392,9 +431,16 @@ ${source.content}
 </${source.ai}_response>`;
   }
 
-  // Send to all target AIs
+  // Send to all target AIs with delay
+  let sendCount = 0;
   for (const targetAI of parsed.targetAIs) {
     await sendToAI(targetAI, fullMessage);
+
+    // Delay between sends (except for the last one)
+    if (sendCount < parsed.targetAIs.length - 1) {
+      await delay(400);
+    }
+    sendCount++;
   }
 }
 
@@ -428,9 +474,17 @@ async function handleMutualReview(participants, prompt) {
     let evalMessage = `以下是其他 AI 的观点：\n`;
 
     for (const sourceAI of otherAIs) {
+      let responseContent = responses[sourceAI];
+
+      // Truncate if too long (limit to 3000 chars)
+      const MAX_LENGTH = 3000;
+      if (responseContent.length > MAX_LENGTH) {
+        responseContent = responseContent.substring(0, MAX_LENGTH) + '\n\n[内容已截断...]';
+      }
+
       evalMessage += `
 <${sourceAI}_response>
-${responses[sourceAI]}
+${responseContent}
 </${sourceAI}_response>
 `;
     }
@@ -439,6 +493,9 @@ ${responses[sourceAI]}
 
     log(`[Mutual] Sending to ${targetAI}: ${otherAIs.join('+')} responses + prompt`);
     await sendToAI(targetAI, evalMessage);
+
+    // Add delay between sends to prevent rate limiting
+    await delay(500);
   }
 
   log(`[Mutual] Complete! All ${participants.length} AIs received cross-evaluations`, 'success');
@@ -485,8 +542,8 @@ function log(message, type = 'info') {
   entry.innerHTML = `<span class="time">${time}</span>${message}`;
   logContainer.insertBefore(entry, logContainer.firstChild);
 
-  // Keep only last 50 entries
-  while (logContainer.children.length > 50) {
+  // Keep only last 200 entries
+  while (logContainer.children.length > 200) {
     logContainer.removeChild(logContainer.lastChild);
   }
 }
@@ -865,6 +922,11 @@ function updateDiscussionStatus(state, text) {
   const statusEl = document.getElementById('discussion-status');
   statusEl.textContent = text;
   statusEl.className = 'discussion-status ' + state;
+}
+
+// Delay utility for rate limiting
+async function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function capitalize(str) {
