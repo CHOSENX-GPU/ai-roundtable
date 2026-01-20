@@ -1,6 +1,6 @@
 // AI Panel - Claude Content Script
 
-(function() {
+(function () {
   'use strict';
 
   const AI_TYPE = 'claude';
@@ -219,7 +219,7 @@
         await sleep(checkInterval);
 
         const isStreaming = document.querySelector('[data-is-streaming="true"]') ||
-                           document.querySelector('button[aria-label*="Stop"]');
+          document.querySelector('button[aria-label*="Stop"]');
 
         const currentContent = getLatestResponse() || '';
 
@@ -273,7 +273,7 @@
         const buttons = parent.querySelectorAll('button');
         for (const btn of buttons) {
           if (btn.textContent.includes('Thought process') ||
-              btn.textContent.includes('思考过程')) {
+            btn.textContent.includes('思考过程')) {
             // Check if block is descendant of this button's container
             const btnContainer = btn.closest('[class*="border-border-300"]');
             if (btnContainer && btnContainer.contains(block)) {
@@ -309,51 +309,16 @@
   function isVisible(el) {
     const style = window.getComputedStyle(el);
     return style.display !== 'none' &&
-           style.visibility !== 'hidden' &&
-           style.opacity !== '0';
+      style.visibility !== 'hidden' &&
+      style.opacity !== '0';
   }
 
   async function newConversation() {
-    // Find the new conversation button - Claude typically has a button with text "New chat" or similar
-    const newChatSelectors = [
-      'button[aria-label="New chat"]',
-      'button:has-text("New chat")',
-      'a[href*="/new"]',
-      'button:contains("New")',
-      '[data-testid="new-chat-button"]',
-      // Also try finding by SVG icon
-      'button svg[viewBox="0 0 24 24"]' // Plus icon
-    ];
-
-    for (const selector of newChatSelectors) {
-      try {
-        let button = null;
-
-        // Handle :contains() pseudo-selector
-        if (selector.includes(':contains(')) {
-          const tagName = selector.split(':')[0];
-          const text = selector.match(/:contains\("([^"]+)"\)/)[1];
-          const buttons = Array.from(document.querySelectorAll(tagName));
-          button = buttons.find(btn => btn.textContent.includes(text));
-        } else {
-          button = document.querySelector(selector);
-        }
-
-        if (button && isVisible(button)) {
-          console.log('[AI Panel] Claude found new chat button with selector:', selector);
-          button.click();
-          await sleep(500);
-          return;
-        }
-      } catch (e) {
-        // Selector failed, try next one
-        continue;
-      }
-    }
-
-    // Fallback: Try to navigate to Claude homepage
-    console.log('[AI Panel] Claude new chat button not found, navigating to homepage');
-    window.location.href = 'https://claude.ai';
+    // Direct navigation is most reliable
+    console.log('[AI Panel] Claude: Starting new conversation via navigation');
+    await sleep(100);
+    window.location.href = 'https://claude.ai/new';
+    return true;
   }
 
   console.log('[AI Panel] Claude content script loaded');

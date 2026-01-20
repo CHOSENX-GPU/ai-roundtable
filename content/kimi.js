@@ -46,6 +46,13 @@
             sendResponse({ content: response });
             return true;
         }
+
+        if (message.type === 'NEW_CONVERSATION') {
+            newConversation()
+                .then(() => sendResponse({ success: true }))
+                .catch(err => sendResponse({ success: false, error: err.message }));
+            return true;
+        }
     });
 
     // Setup response observer for cross-reference feature
@@ -330,6 +337,14 @@
         return style.display !== 'none' &&
             style.visibility !== 'hidden' &&
             style.opacity !== '0';
+    }
+
+    async function newConversation() {
+        // Direct navigation is most reliable
+        console.log('[AI Panel] Kimi: Starting new conversation via navigation');
+        await sleep(100);
+        window.location.href = 'https://kimi.moonshot.cn/';
+        return true;
     }
 
     console.log('[AI Panel] Kimi content script loaded');

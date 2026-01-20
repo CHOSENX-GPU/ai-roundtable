@@ -1,6 +1,6 @@
 // AI Panel - ChatGPT Content Script
 
-(function() {
+(function () {
   'use strict';
 
   const AI_TYPE = 'chatgpt';
@@ -44,6 +44,13 @@
     if (message.type === 'GET_LATEST_RESPONSE') {
       const response = getLatestResponse();
       sendResponse({ content: response });
+      return true;
+    }
+
+    if (message.type === 'NEW_CONVERSATION') {
+      newConversation()
+        .then(() => sendResponse({ success: true }))
+        .catch(err => sendResponse({ success: false, error: err.message }));
       return true;
     }
   });
@@ -141,10 +148,10 @@
     // Wait for button to be clickable (not disabled and not aria-disabled)
     while (Date.now() - start < maxWait) {
       const isDisabled = !!button.disabled ||
-                        button.getAttribute('aria-disabled') === 'true' ||
-                        button.classList.contains('disabled') ||
-                        button.style.opacity === '0' ||
-                        button.style.pointerEvents === 'none';
+        button.getAttribute('aria-disabled') === 'true' ||
+        button.classList.contains('disabled') ||
+        button.style.opacity === '0' ||
+        button.style.pointerEvents === 'none';
       if (!isDisabled) {
         console.log('[AI Panel] ChatGPT button is enabled, proceeding with click');
         return;
@@ -248,7 +255,7 @@
         // Debug: log every 10 seconds
         const elapsed = Date.now() - startTime;
         if (elapsed % 10000 < checkInterval) {
-          console.log(`[AI Panel] ChatGPT check: contentLen=${currentContent.length}, stableCount=${stableCount}, elapsed=${Math.round(elapsed/1000)}s`);
+          console.log(`[AI Panel] ChatGPT check: contentLen=${currentContent.length}, stableCount=${stableCount}, elapsed=${Math.round(elapsed / 1000)}s`);
         }
 
         // Content is stable when content unchanged and has content
@@ -278,7 +285,7 @@
 
         previousContent = currentContent;
       }
-      console.log('[AI Panel] ChatGPT capture timeout after', maxWait/1000, 'seconds');
+      console.log('[AI Panel] ChatGPT capture timeout after', maxWait / 1000, 'seconds');
     } finally {
       isCapturing = false;
       console.log('[AI Panel] ChatGPT capture loop ended');
@@ -322,8 +329,18 @@
   function isVisible(el) {
     const style = window.getComputedStyle(el);
     return style.display !== 'none' &&
-           style.visibility !== 'hidden' &&
-           style.opacity !== '0';
+      style.visibility !== 'hidden' &&
+      style.opacity !== '0';
+  }
+
+  async function newConversation() {
+    // Direct navigation is most reliable
+    console.log('[AI Panel] ChatGPT: Starting new conversation via navigation');
+    // Small delay to ensure response message is sent
+    await sleep(100);
+    window.location.href = 'https://chatgpt.com/';
+    // Return success after triggering navigation
+    return true;
   }
 
   console.log('[AI Panel] ChatGPT content script loaded');

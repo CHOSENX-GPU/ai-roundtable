@@ -46,6 +46,13 @@
             sendResponse({ content: response });
             return true;
         }
+
+        if (message.type === 'NEW_CONVERSATION') {
+            newConversation()
+                .then(() => sendResponse({ success: true }))
+                .catch(err => sendResponse({ success: false, error: err.message }));
+            return true;
+        }
     });
 
     // Setup response observer for cross-reference feature
@@ -243,8 +250,8 @@
         let previousContent = '';
         let stableCount = 0;
         const maxWait = 600000;  // 10 minutes - AI responses can be very long
-        const checkInterval = 500;
-        const stableThreshold = 4;  // 2 seconds of stable content
+        const checkInterval = 400;  // Check faster
+        const stableThreshold = 10;  // ~4 seconds of stable content (increased for complete capture)
 
         const startTime = Date.now();
 
@@ -290,46 +297,56 @@
     }
 
     function getLatestResponse() {
-        // Find the latest assistant message - more robust selectors
-        const messageSelectors = [
-            // DeepSeek specific - try multiple patterns
-            '.message.assistant .message-content',
-            '.assistant-message .markdown-body',
-            '[class*="assistant"] [class*="markdown"]',
-            '[class*="assistant-message"]',
+        // Find the latest assistant message - DeepSeek specific
+        // Strategy: Find the parent container that holds all paragraphs, not individual ones
+        const containerSelectors = [
+            // DeepSeek markdown container (parent of all paragraphs)
+            'div[class*="ds-markdown"].ds-markdown--block',  // Main markdown block
+            'div[class*="ds-markdown"]',                      // Any ds-markdown container
             '[class*="message-content"]',
-            '[class*="ds-markdown"]',
             '.markdown-body',
-            // Most generic fallback - find all text blocks in main area
-            'main article:last-child p',
+            // Fallbacks
             'main div[class*="message"]:last-child'
         ];
 
         let bestContent = null;
         let maxLength = 0;
 
-        for (const selector of messageSelectors) {
-            const messages = document.querySelectorAll(selector);
-            if (messages.length > 0) {
-                // Get the last message
-                const lastMessage = messages[messages.length - 1];
-                const content = lastMessage.innerText.trim();
+        for (const selector of containerSelectors) {
+            try {
+                const containers = document.querySelectorAll(selector);
+                if (containers.length > 0) {
+                    // Get the LAST container (most recent response)
+                    const lastContainer = containers[containers.length - 1];
+                    const content = lastContainer.innerText.trim();
 
-                // Keep the longest valid content
-                if (content.length > maxLength && content.length > 20) {
-                    maxLength = content.length;
-                    bestContent = content;
+                    // Keep the longest valid content
+                    if (content.length > maxLength && content.length > 20) {
+                        maxLength = content.length;
+                        bestContent = content;
+                        console.log('[AI Panel] DeepSeek found container:', selector, 'len:', content.length);
+                    }
                 }
+            } catch (e) {
+                console.log('[AI Panel] DeepSeek selector error:', e.message);
             }
         }
 
         if (bestContent) {
-            console.log('[AI Panel] DeepSeek captured content length:', maxLength);
+            console.log('[AI Panel] DeepSeek captured full length:', maxLength);
             return bestContent;
         }
 
         console.log('[AI Panel] DeepSeek could not find response');
         return null;
+    }
+
+    async function newConversation() {
+        // Direct navigation is most reliable
+        console.log('[AI Panel] DeepSeek: Starting new conversation via navigation');
+        await sleep(100);
+        window.location.href = 'https://chat.deepseek.com/';
+        return true;
     }
 
     // Utility functions

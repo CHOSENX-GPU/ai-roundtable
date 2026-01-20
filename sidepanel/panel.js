@@ -542,6 +542,9 @@ function log(message, type = 'info') {
   entry.innerHTML = `<span class="time">${time}</span>${message}`;
   logContainer.insertBefore(entry, logContainer.firstChild);
 
+  // Auto-scroll to top to show newest entry
+  logContainer.scrollTop = 0;
+
   // Keep only last 200 entries
   while (logContainer.children.length > 200) {
     logContainer.removeChild(logContainer.lastChild);

@@ -46,6 +46,13 @@
             sendResponse({ content: response });
             return true;
         }
+
+        if (message.type === 'NEW_CONVERSATION') {
+            newConversation()
+                .then(() => sendResponse({ success: true }))
+                .catch(err => sendResponse({ success: false, error: err.message }));
+            return true;
+        }
     });
 
     // Setup response observer for cross-reference feature
@@ -143,10 +150,10 @@
         // Wait for button to be clickable (not disabled and not aria-disabled)
         while (Date.now() - start < maxWait) {
             const isDisabled = !!button.disabled ||
-                              button.getAttribute('aria-disabled') === 'true' ||
-                              button.classList.contains('disabled') ||
-                              button.style.opacity === '0' ||
-                              button.style.pointerEvents === 'none';
+                button.getAttribute('aria-disabled') === 'true' ||
+                button.classList.contains('disabled') ||
+                button.style.opacity === '0' ||
+                button.style.pointerEvents === 'none';
             if (!isDisabled) {
                 console.log('[AI Panel] Qwen button is enabled, proceeding with click');
                 return;
@@ -223,8 +230,8 @@
         let previousLength = 0;
         let stableCount = 0;
         const maxWait = 600000;  // 10 minutes
-        const checkInterval = 300;  // Check more frequently
-        const stableThreshold = 10;  // 3 seconds of stable content (increased)
+        const checkInterval = 400;  // Check faster
+        const stableThreshold = 8;  // ~3.2 seconds of stable content (increased for long responses)
 
         const startTime = Date.now();
 
@@ -358,6 +365,14 @@
         return style.display !== 'none' &&
             style.visibility !== 'hidden' &&
             style.opacity !== '0';
+    }
+
+    async function newConversation() {
+        // Direct navigation is most reliable
+        console.log('[AI Panel] Qwen: Starting new conversation via navigation');
+        await sleep(100);
+        window.location.href = 'https://tongyi.aliyun.com/qianwen/';
+        return true;
     }
 
     console.log('[AI Panel] Qwen content script loaded');

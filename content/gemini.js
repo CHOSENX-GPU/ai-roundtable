@@ -1,6 +1,6 @@
 // AI Panel - Gemini Content Script
 
-(function() {
+(function () {
   'use strict';
 
   const AI_TYPE = 'gemini';
@@ -44,6 +44,13 @@
     if (message.type === 'GET_LATEST_RESPONSE') {
       const response = getLatestResponse();
       sendResponse({ content: response });
+      return true;
+    }
+
+    if (message.type === 'NEW_CONVERSATION') {
+      newConversation()
+        .then(() => sendResponse({ success: true }))
+        .catch(err => sendResponse({ success: false, error: err.message }));
       return true;
     }
   });
@@ -134,7 +141,7 @@
         const text = btn.textContent.toLowerCase();
         const ariaLabel = (btn.getAttribute('aria-label') || '').toLowerCase();
         if (text.includes('send') || ariaLabel.includes('send') ||
-            text.includes('submit') || ariaLabel.includes('submit')) {
+          text.includes('submit') || ariaLabel.includes('submit')) {
           return btn;
         }
       }
@@ -158,10 +165,10 @@
     // Wait for button to be clickable (not disabled and not aria-disabled)
     while (Date.now() - start < maxWait) {
       const isDisabled = !!button.disabled ||
-                        button.getAttribute('aria-disabled') === 'true' ||
-                        button.classList.contains('disabled') ||
-                        button.style.opacity === '0' ||
-                        button.style.pointerEvents === 'none';
+        button.getAttribute('aria-disabled') === 'true' ||
+        button.classList.contains('disabled') ||
+        button.style.opacity === '0' ||
+        button.style.pointerEvents === 'none';
       if (!isDisabled) {
         console.log('[AI Panel] Gemini button is enabled, proceeding with click');
         return;
@@ -214,8 +221,8 @@
 
     // Check if this node or its children contain a model response
     const isResponse = node.matches?.('.model-response-text, message-content') ||
-                      node.querySelector?.('.model-response-text, message-content') ||
-                      node.classList?.contains('model-response-text');
+      node.querySelector?.('.model-response-text, message-content') ||
+      node.classList?.contains('model-response-text');
 
     if (isResponse) {
       console.log('[AI Panel] Gemini detected new response, waiting for completion...');
@@ -315,8 +322,16 @@
     if (!el) return false;
     const style = window.getComputedStyle(el);
     return style.display !== 'none' &&
-           style.visibility !== 'hidden' &&
-           style.opacity !== '0';
+      style.visibility !== 'hidden' &&
+      style.opacity !== '0';
+  }
+
+  async function newConversation() {
+    // Direct navigation is most reliable
+    console.log('[AI Panel] Gemini: Starting new conversation via navigation');
+    await sleep(100);
+    window.location.href = 'https://gemini.google.com/app';
+    return true;
   }
 
   console.log('[AI Panel] Gemini content script loaded');
