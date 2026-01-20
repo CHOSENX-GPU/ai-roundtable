@@ -371,7 +371,7 @@
         // Direct navigation is most reliable
         console.log('[AI Panel] Qwen: Starting new conversation via navigation');
         await sleep(100);
-        window.location.href = 'https://tongyi.aliyun.com/qianwen/';
+        window.location.href = 'https://chat.qwen.ai/';
         return true;
     }
 
