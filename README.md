@@ -58,13 +58,27 @@
 
 ## 安装
 
-### 开发者模式安装
+### 快速安装（推荐）
+
+**方式一：从 Release 下载**
+
+1. 前往 [Releases 页面](https://github.com/CHOSENX-GPU/ai-roundtable/releases)
+2. 下载最新版本的 `ai-roundtable-vX.X.X.zip`
+3. 解压到任意文件夹
+4. 打开 Chrome，进入 `chrome://extensions/`
+5. 开启右上角「开发者模式」
+6. 点击「加载已解压的扩展程序」
+7. 选择解压后的文件夹
+
+**方式二：开发者模式安装**
 
 1. 下载或克隆本仓库
 2. 打开 Chrome，进入 `chrome://extensions/`
 3. 开启右上角「开发者模式」
 4. 点击「加载已解压的扩展程序」
 5. 选择本项目文件夹
+
+详细安装说明请查看 [INSTALLATION.md](https://github.com/CHOSENX-GPU/ai-roundtable/blob/master/INSTALLATION.md)
 
 ## 使用方法
 
