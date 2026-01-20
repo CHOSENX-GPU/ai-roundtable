@@ -94,6 +94,30 @@ async function getResponseFromContentScript(aiType) {
   }
 }
 
+// Reload content script if it's dead
+async function ensureContentScriptAlive(aiType, tab) {
+  try {
+    // Try to ping the tab
+    await chrome.tabs.sendMessage(tab.id, { type: 'PING' }, { timeoutMs: 2000 });
+    return true;  // Content script is alive
+  } catch (err) {
+    console.log('[AI Panel] Content script dead for', aiType, ', reloading...');
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: [`content/${aiType}.js`]
+      });
+      // Wait for initialization
+      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('[AI Panel] Content script reloaded for', aiType);
+      return true;
+    } catch (reloadErr) {
+      console.log('[AI Panel] Failed to reload content script:', reloadErr.message);
+      return false;
+    }
+  }
+}
+
 async function sendMessageToAI(aiType, message, retryCount = 0) {
   const maxRetries = 2;
 
@@ -105,18 +129,10 @@ async function sendMessageToAI(aiType, message, retryCount = 0) {
       return { success: false, error: `No ${aiType} tab found` };
     }
 
-    // Try to ping the tab first to check if content script is alive
-    try {
-      await chrome.tabs.sendMessage(tab.id, { type: 'PING' }, { timeoutMs: 1000 });
-    } catch (pingErr) {
-      console.log('[AI Panel] Ping failed, reloading content script for', aiType);
-      // Content script might be dead, try to reload it
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: [`content/${aiType}.js`]
-      });
-      // Wait a bit for the script to initialize
-      await new Promise(resolve => setTimeout(resolve, 500));
+    // Ensure content script is alive
+    const isAlive = await ensureContentScriptAlive(aiType, tab);
+    if (!isAlive) {
+      return { success: false, error: `Failed to connect to ${aiType}` };
     }
 
     // Send message to content script with timeout
@@ -229,7 +245,7 @@ setInterval(async () => {
   } catch (err) {
     // Ignore errors during heartbeat
   }
-}, 30000); // Send heartbeat every 30 seconds
+}, 10000); // Send heartbeat every 10 seconds
 
 // Start new conversation for selected AIs
 async function startNewConversation(aiTypes) {
