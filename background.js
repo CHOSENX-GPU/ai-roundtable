@@ -8,7 +8,7 @@ const AI_URL_PATTERNS = {
   deepseek: ['chat.deepseek.com'],
   qwen: ['chat.qwen.ai', 'www.qianwen.com', 'qianwen.com'],
   kimi: ['www.kimi.com', 'kimi.com'],
-  doubao: ['www.doubao.com', 'doubao.com'],
+  doubao: ['www.doubao.com', 'doubao.com', 'bot.doubao.com', 'chat.doubao.com'],
   chatglm: ['chatglm.cn']
 };
 
@@ -61,6 +61,10 @@ async function handleMessage(message, sender) {
         notifySidePanel('TAB_STATUS_UPDATE', { aiType, connected: true });
       }
       return { success: true };
+
+    case 'NEW_CONVERSATION':
+      // Start a new conversation for selected AIs
+      return await startNewConversation(message.aiTypes);
 
     default:
       return { error: 'Unknown message type' };
@@ -226,3 +230,33 @@ setInterval(async () => {
     // Ignore errors during heartbeat
   }
 }, 30000); // Send heartbeat every 30 seconds
+
+// Start new conversation for selected AIs
+async function startNewConversation(aiTypes) {
+  const results = {};
+
+  for (const aiType of aiTypes) {
+    try {
+      const tab = await findAITab(aiType);
+      if (!tab) {
+        results[aiType] = { success: false, error: `No ${aiType} tab found` };
+        continue;
+      }
+
+      // Send NEW_CONVERSATION message to content script
+      const response = await chrome.tabs.sendMessage(tab.id, {
+        type: 'NEW_CONVERSATION'
+      });
+
+      results[aiType] = response || { success: true };
+    } catch (err) {
+      console.log('[AI Panel] New conversation error for', aiType, ':', err.message);
+      results[aiType] = { success: false, error: err.message };
+    }
+  }
+
+  // Notify side panel of results
+  notifySidePanel('NEW_CONVERSATION_RESULTS', { results });
+
+  return { success: true, results };
+}

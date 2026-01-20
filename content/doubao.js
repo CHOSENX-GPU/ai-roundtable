@@ -46,6 +46,13 @@
             sendResponse({ content: response });
             return true;
         }
+
+        if (message.type === 'NEW_CONVERSATION') {
+            newConversation()
+                .then(() => sendResponse({ success: true }))
+                .catch(err => sendResponse({ success: false, error: err.message }));
+            return true;
+        }
     });
 
     // Setup response observer for cross-reference feature
@@ -341,6 +348,45 @@
         return style.display !== 'none' &&
             style.visibility !== 'hidden' &&
             style.opacity !== '0';
+    }
+
+    async function newConversation() {
+        // Find new chat button for Doubao
+        const newChatSelectors = [
+            'button:contains("新对话")',
+            'button:contains("新建")',
+            'button:contains("New")',
+            'a[href*="/new"]',
+            '[data-testid="new-chat-button"]'
+        ];
+
+        for (const selector of newChatSelectors) {
+            try {
+                let button = null;
+
+                if (selector.includes(':contains(')) {
+                    const tagName = selector.split(':')[0];
+                    const text = selector.match(/:contains\("([^"]+)"\)/)[1];
+                    const buttons = Array.from(document.querySelectorAll(tagName));
+                    button = buttons.find(btn => btn.textContent.includes(text));
+                } else {
+                    button = document.querySelector(selector);
+                }
+
+                if (button && isVisible(button)) {
+                    console.log('[AI Panel] Doubao found new chat button');
+                    button.click();
+                    await sleep(500);
+                    return;
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+
+        // Fallback: reload page
+        console.log('[AI Panel] Doubao new chat button not found, reloading page');
+        window.location.reload();
     }
 
     console.log('[AI Panel] Doubao content script loaded');

@@ -46,6 +46,13 @@
       sendResponse({ content: response });
       return true;
     }
+
+    if (message.type === 'NEW_CONVERSATION') {
+      newConversation()
+        .then(() => sendResponse({ success: true }))
+        .catch(err => sendResponse({ success: false, error: err.message }));
+      return true;
+    }
   });
 
   // Setup response observer for cross-reference feature
@@ -304,6 +311,49 @@
     return style.display !== 'none' &&
            style.visibility !== 'hidden' &&
            style.opacity !== '0';
+  }
+
+  async function newConversation() {
+    // Find the new conversation button - Claude typically has a button with text "New chat" or similar
+    const newChatSelectors = [
+      'button[aria-label="New chat"]',
+      'button:has-text("New chat")',
+      'a[href*="/new"]',
+      'button:contains("New")',
+      '[data-testid="new-chat-button"]',
+      // Also try finding by SVG icon
+      'button svg[viewBox="0 0 24 24"]' // Plus icon
+    ];
+
+    for (const selector of newChatSelectors) {
+      try {
+        let button = null;
+
+        // Handle :contains() pseudo-selector
+        if (selector.includes(':contains(')) {
+          const tagName = selector.split(':')[0];
+          const text = selector.match(/:contains\("([^"]+)"\)/)[1];
+          const buttons = Array.from(document.querySelectorAll(tagName));
+          button = buttons.find(btn => btn.textContent.includes(text));
+        } else {
+          button = document.querySelector(selector);
+        }
+
+        if (button && isVisible(button)) {
+          console.log('[AI Panel] Claude found new chat button with selector:', selector);
+          button.click();
+          await sleep(500);
+          return;
+        }
+      } catch (e) {
+        // Selector failed, try next one
+        continue;
+      }
+    }
+
+    // Fallback: Try to navigate to Claude homepage
+    console.log('[AI Panel] Claude new chat button not found, navigating to homepage');
+    window.location.href = 'https://claude.ai';
   }
 
   console.log('[AI Panel] Claude content script loaded');

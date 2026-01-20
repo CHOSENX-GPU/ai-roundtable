@@ -67,6 +67,29 @@ header .subtitle {
   flex-shrink: 0;
 }
 
+/* New Chat Button */
+.new-chat-btn {
+  padding: 6px 12px;
+  background: rgba(74, 250, 255, 0.1);
+  color: var(--electric-cyan);
+  border: 1px solid var(--electric-cyan);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+
+.new-chat-btn:hover {
+  background: rgba(74, 250, 255, 0.2);
+  box-shadow: 0 0 10px var(--cyan-glow);
+}
+
+.new-chat-btn:active {
+  transform: scale(0.98);
+}
+
+
 /* AI Group (US/CN) */
 .ai-group {
   display: flex;

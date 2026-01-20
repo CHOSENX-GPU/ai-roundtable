@@ -50,6 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function setupEventListeners() {
   sendBtn.addEventListener('click', handleSend);
 
+  // New chat button
+  document.getElementById('new-chat-btn').addEventListener('click', handleNewChat);
+
   // Enter to send, Shift+Enter for new line (like ChatGPT)
   // But ignore Enter during IME composition (e.g., Chinese input)
   messageInput.addEventListener('keydown', (e) => {
@@ -172,6 +175,47 @@ function updateTabStatus(aiType, connected) {
   }
   if (connected) {
     connectedTabs[aiType] = true;
+  }
+}
+
+async function handleNewChat() {
+  // Get selected AIs from checkboxes
+  const selectedAIs = AI_TYPES.filter(ai => {
+    const checkbox = document.getElementById(`target-${ai}`);
+    return checkbox && checkbox.checked;
+  });
+
+  if (selectedAIs.length === 0) {
+    log('请先选择要开启新对话的 AI', 'error');
+    return;
+  }
+
+  log(`正在为 ${selectedAIs.join(', ')} 开启新对话...`);
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'NEW_CONVERSATION',
+      aiTypes: selectedAIs
+    });
+
+    if (response.success) {
+      // Check results
+      const successCount = Object.values(response.results).filter(r => r.success).length;
+      const failCount = selectedAIs.length - successCount;
+
+      if (failCount === 0) {
+        log(`✓ 已为 ${selectedAIs.join(', ')} 开启新对话`, 'success');
+      } else if (successCount > 0) {
+        log(`⚠ ${successCount} 个 AI 成功，${failCount} 个失败`, 'error');
+      } else {
+        log(`✗ 所有 AI 开启新对话失败`, 'error');
+      }
+    } else {
+      log('✗ 开启新对话失败', 'error');
+    }
+  } catch (err) {
+    console.error('New chat error:', err);
+    log(`✗ 开启新对话出错: ${err.message}`, 'error');
   }
 }
 
