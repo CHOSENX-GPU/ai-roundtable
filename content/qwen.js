@@ -304,9 +304,9 @@
     }
 
     function getLatestResponse() {
-        // Find the latest assistant message - Qwen specific
+        // Find the latest assistant message - more robust selectors
         const messageSelectors = [
-            // Qwen specific selectors
+            // Qwen specific - try multiple patterns
             '.qwen-message .message-content',
             '.chat-message.assistant .message-content',
             '[class*="assistant"] [class*="markdown"]',
@@ -314,28 +314,37 @@
             '[class*="bot-message"]',
             '[class*="message-content"]',
             '.markdown-body',
-            // Fallback - any message with role="assistant"
             '[data-role="assistant"]',
-            '[role="assistant"]'
+            '[role="assistant"]',
+            // Generic fallbacks
+            'main article:last-child .message-content',
+            'main div[class*="message"]:last-child'
         ];
 
-        let messages = [];
+        let bestContent = null;
+        let maxLength = 0;
+
         for (const selector of messageSelectors) {
-            messages = document.querySelectorAll(selector);
+            const messages = document.querySelectorAll(selector);
             if (messages.length > 0) {
-                console.log('[AI Panel] Qwen found messages with selector:', selector, 'count:', messages.length);
-                break;
+                const lastMessage = messages[messages.length - 1];
+                const content = lastMessage.innerText.trim();
+
+                // Keep the longest valid content
+                if (content.length > maxLength && content.length > 20) {
+                    maxLength = content.length;
+                    bestContent = content;
+                    console.log('[AI Panel] Qwen found content with selector:', selector, 'length:', content.length);
+                }
             }
         }
 
-        if (messages.length > 0) {
-            const lastMessage = messages[messages.length - 1];
-            const content = lastMessage.innerText.trim();
-            console.log('[AI Panel] Qwen latest response length:', content.length);
-            return content;
+        if (bestContent) {
+            console.log('[AI Panel] Qwen final captured length:', maxLength);
+            return bestContent;
         }
 
-        console.log('[AI Panel] Qwen could not find response messages');
+        console.log('[AI Panel] Qwen could not find response');
         return null;
     }
 

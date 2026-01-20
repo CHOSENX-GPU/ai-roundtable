@@ -281,26 +281,53 @@
     }
 
     function getLatestResponse() {
-        // Find the latest assistant message
+        // Find the latest assistant message - Doubao specific
         const messageSelectors = [
+            // Doubao (ByteDance) specific patterns
+            '.message-list .message.bot .message-content',
+            '.chat-message.bot .content',
+            '[class*="bot-message"] [class*="content"]',
             '[class*="assistant"] [class*="markdown"]',
             '[class*="bot-message"]',
             '[class*="message-content"]',
             '[class*="doubao-response"]',
-            '.markdown-body'
+            '.markdown-body',
+            // Generic fallbacks - Doubao might use different structure
+            'main article:last-child .content',
+            'main div[class*="message"]:last-child',
+            // Very generic - find any large text block at the end
+            'main > div:last-child div[class*="message"]'
         ];
 
-        let messages = [];
+        let bestContent = null;
+        let maxLength = 0;
+
         for (const selector of messageSelectors) {
-            messages = document.querySelectorAll(selector);
-            if (messages.length > 0) break;
+            try {
+                const messages = document.querySelectorAll(selector);
+                if (messages.length > 0) {
+                    const lastMessage = messages[messages.length - 1];
+                    const content = lastMessage.innerText.trim();
+
+                    // Keep the longest valid content
+                    if (content.length > maxLength && content.length > 20) {
+                        maxLength = content.length;
+                        bestContent = content;
+                        console.log('[AI Panel] Doubao found content with selector:', selector, 'length:', content.length);
+                    }
+                }
+            } catch (e) {
+                // Selector might be invalid, skip it
+                console.log('[AI Panel] Doubao selector failed:', selector, e.message);
+            }
         }
 
-        if (messages.length > 0) {
-            const lastMessage = messages[messages.length - 1];
-            return lastMessage.innerText.trim();
+        if (bestContent) {
+            console.log('[AI Panel] Doubao final captured length:', maxLength);
+            return bestContent;
         }
 
+        console.log('[AI Panel] Doubao could not find response - DOM structure may have changed');
         return null;
     }
 

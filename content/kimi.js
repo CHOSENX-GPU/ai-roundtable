@@ -279,26 +279,44 @@
     }
 
     function getLatestResponse() {
-        // Find the latest assistant message
+        // Find the latest assistant message - more robust selectors
         const messageSelectors = [
+            // Kimi specific - try multiple patterns
+            '.message-list .message.ai .message-content',
+            '[class*="bot-message"] .message-content',
             '[class*="assistant"] [class*="markdown"]',
-            '[class*="bot-message"]',
             '[class*="message-content"]',
             '[class*="kimi-response"]',
-            '.markdown-body'
+            '.markdown-body',
+            // Generic fallbacks
+            'main article:last-child',
+            'main div[class*="message"]:last-child'
         ];
 
-        let messages = [];
+        let bestContent = null;
+        let maxLength = 0;
+
         for (const selector of messageSelectors) {
-            messages = document.querySelectorAll(selector);
-            if (messages.length > 0) break;
+            const messages = document.querySelectorAll(selector);
+            if (messages.length > 0) {
+                const lastMessage = messages[messages.length - 1];
+                const content = lastMessage.innerText.trim();
+
+                // Keep the longest valid content
+                if (content.length > maxLength && content.length > 20) {
+                    maxLength = content.length;
+                    bestContent = content;
+                    console.log('[AI Panel] Kimi found content with selector:', selector, 'length:', content.length);
+                }
+            }
         }
 
-        if (messages.length > 0) {
-            const lastMessage = messages[messages.length - 1];
-            return lastMessage.innerText.trim();
+        if (bestContent) {
+            console.log('[AI Panel] Kimi final captured length:', maxLength);
+            return bestContent;
         }
 
+        console.log('[AI Panel] Kimi could not find response');
         return null;
     }
 

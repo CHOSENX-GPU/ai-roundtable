@@ -290,26 +290,45 @@
     }
 
     function getLatestResponse() {
-        // Find the latest assistant message
+        // Find the latest assistant message - more robust selectors
         const messageSelectors = [
+            // DeepSeek specific - try multiple patterns
+            '.message.assistant .message-content',
+            '.assistant-message .markdown-body',
             '[class*="assistant"] [class*="markdown"]',
             '[class*="assistant-message"]',
             '[class*="message-content"]',
             '[class*="ds-markdown"]',
-            '.markdown-body'
+            '.markdown-body',
+            // Most generic fallback - find all text blocks in main area
+            'main article:last-child p',
+            'main div[class*="message"]:last-child'
         ];
 
-        let messages = [];
+        let bestContent = null;
+        let maxLength = 0;
+
         for (const selector of messageSelectors) {
-            messages = document.querySelectorAll(selector);
-            if (messages.length > 0) break;
+            const messages = document.querySelectorAll(selector);
+            if (messages.length > 0) {
+                // Get the last message
+                const lastMessage = messages[messages.length - 1];
+                const content = lastMessage.innerText.trim();
+
+                // Keep the longest valid content
+                if (content.length > maxLength && content.length > 20) {
+                    maxLength = content.length;
+                    bestContent = content;
+                }
+            }
         }
 
-        if (messages.length > 0) {
-            const lastMessage = messages[messages.length - 1];
-            return lastMessage.innerText.trim();
+        if (bestContent) {
+            console.log('[AI Panel] DeepSeek captured content length:', maxLength);
+            return bestContent;
         }
 
+        console.log('[AI Panel] DeepSeek could not find response');
         return null;
     }
 
