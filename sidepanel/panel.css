@@ -193,6 +193,7 @@ header .subtitle {
   gap: 8px;
   flex: 1;
   min-height: 0;
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 /* Action & Shortcut Buttons Row */
@@ -369,6 +370,7 @@ header .subtitle {
   resize: none;
   flex: 1;
   min-height: 150px;
+  max-height: 300px; /* 限制最大高度，防止过度扩展 */
 }
 
 #message-input:focus {
