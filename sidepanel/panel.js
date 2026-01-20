@@ -194,10 +194,16 @@ async function checkConnectedTabs() {
   try {
     const tabs = await chrome.tabs.query({});
 
+    // First, mark all as disconnected
+    for (const aiType of AI_TYPES) {
+      updateTabStatus(aiType, false);
+    }
+
+    // Then mark connected ones
     for (const tab of tabs) {
       const aiType = getAITypeFromUrl(tab.url);
       if (aiType) {
-        connectedTabs[aiType] = tab.id;
+        connectedTabs[aiType] = true;
         updateTabStatus(aiType, true);
       }
     }
@@ -221,12 +227,29 @@ function getAITypeFromUrl(url) {
 
 function updateTabStatus(aiType, connected) {
   const statusEl = document.getElementById(`status-${aiType}`);
+  const checkbox = document.getElementById(`target-${aiType}`);
+
   if (statusEl) {
     statusEl.textContent = connected ? 'Connected' : 'Not found';
     statusEl.className = 'status ' + (connected ? 'connected' : 'disconnected');
   }
+
+  // Update connected tabs tracking
   if (connected) {
     connectedTabs[aiType] = true;
+    // Enable checkbox
+    if (checkbox) {
+      checkbox.disabled = false;
+      checkbox.parentElement.classList.remove('disabled');
+    }
+  } else {
+    delete connectedTabs[aiType];
+    // Disable checkbox and uncheck it
+    if (checkbox) {
+      checkbox.disabled = true;
+      checkbox.checked = false;
+      checkbox.parentElement.classList.add('disabled');
+    }
   }
 }
 
@@ -295,6 +318,21 @@ async function handleSend() {
     log('No targets selected', 'error');
     return;
   }
+
+  // Filter out disconnected AIs
+  const connectedTargets = targets.filter(ai => connectedTabs[ai]);
+  if (connectedTargets.length === 0) {
+    log('No connected AI available. Please open AI pages first.', 'error');
+    return;
+  }
+
+  if (connectedTargets.length < targets.length) {
+    const disconnected = targets.filter(ai => !connectedTabs[ai]);
+    log(`Warning: ${disconnected.join(', ')} are not connected. Skipping.`, 'error');
+  }
+
+  // Use only connected targets
+  targets = connectedTargets;
 
   sendBtn.disabled = true;
 

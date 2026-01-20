@@ -185,6 +185,25 @@ header .subtitle {
   color: #30D158;
 }
 
+.status.disconnected {
+  color: #FF453A;
+}
+
+/* Disabled State for AI Labels */
+.target-label.compact.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.target-label.compact.disabled .target-name {
+  color: var(--text-secondary);
+}
+
+.target-label.compact.disabled input[type="checkbox"] {
+  cursor: not-allowed;
+}
+
 /* New Chat Button */
 .new-chat-btn {
   width: 100%;

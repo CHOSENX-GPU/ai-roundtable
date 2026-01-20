@@ -12,6 +12,9 @@ const AI_URL_PATTERNS = {
   chatglm: ['chatglm.cn']
 };
 
+// Track which tab belongs to which AI
+const tabToAIMap = new Map(); // tabId -> aiType
+
 // Store latest responses using chrome.storage.session (persists across service worker restarts)
 async function getStoredResponses() {
   const result = await chrome.storage.session.get('latestResponses');
@@ -212,19 +215,48 @@ async function notifySidePanel(type, data) {
 }
 
 // Track tab updates
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab.url) {
     const aiType = getAITypeFromUrl(tab.url);
     if (aiType) {
+      // Track this tab
+      tabToAIMap.set(tabId, aiType);
       notifySidePanel('TAB_STATUS_UPDATE', { aiType, connected: true });
+    } else if (tabToAIMap.has(tabId)) {
+      // Tab changed away from AI URL
+      const oldAIType = tabToAIMap.get(tabId);
+      tabToAIMap.delete(tabId);
+
+      // Check if there are other tabs for this AI
+      const tabs = await chrome.tabs.query({});
+      const hasOtherTab = tabs.some(t => t.url && getAITypeFromUrl(t.url) === oldAIType);
+
+      if (!hasOtherTab) {
+        notifySidePanel('TAB_STATUS_UPDATE', { aiType: oldAIType, connected: false });
+      }
     }
   }
 });
 
 // Track tab closures
-chrome.tabs.onRemoved.addListener((tabId) => {
-  // We'd need to track which tabs were AI tabs to notify properly
-  // For now, side panel will re-check on next action
+chrome.tabs.onRemoved.addListener(async (tabId) => {
+  if (tabToAIMap.has(tabId)) {
+    const aiType = tabToAIMap.get(tabId);
+    tabToAIMap.delete(tabId);
+
+    // Check if there are other tabs for this AI
+    try {
+      const tabs = await chrome.tabs.query({});
+      const hasOtherTab = tabs.some(t => t.url && getAITypeFromUrl(t.url) === aiType);
+
+      if (!hasOtherTab) {
+        // No more tabs for this AI, notify disconnection
+        notifySidePanel('TAB_STATUS_UPDATE', { aiType, connected: false });
+      }
+    } catch (err) {
+      console.log('[AI Panel] Error checking for other tabs:', err.message);
+    }
+  }
 });
 
 // Heartbeat mechanism to keep content scripts alive
