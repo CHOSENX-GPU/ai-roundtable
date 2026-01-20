@@ -2,6 +2,27 @@
 
 const AI_TYPES = ['claude', 'chatgpt', 'gemini', 'deepseek', 'qwen', 'kimi', 'doubao', 'chatglm'];
 
+// Map Chinese and alternative names to standard AI types
+const AI_NAME_MAP = {
+  'claude': 'claude',
+  'chatgpt': 'chatgpt',
+  'gemini': 'gemini',
+  'deepseek': 'deepseek',
+  'qwen': 'qwen',
+  '通义千问': 'qwen',
+  'kimi': 'kimi',
+  'doubao': 'doubao',
+  '豆包': 'doubao',
+  'chatglm': 'chatglm',
+  '智谱清言': 'chatglm'
+};
+
+// Normalize AI name to standard type
+function normalizeAIName(name) {
+  const normalized = name.toLowerCase().trim();
+  return AI_NAME_MAP[normalized] || normalized;
+}
+
 // Cross-reference action keywords (inserted into message)
 const CROSS_REF_ACTIONS = {
   evaluate: { prompt: '评价一下' },
@@ -338,15 +359,15 @@ function parseMessage(message) {
     const afterArrow = message.substring(arrowIndex + 2).trim();  // Skip "<-"
 
     // Extract targets (before arrow)
-    const mentionPattern = /@(claude|chatgpt|gemini|deepseek|qwen|kimi|豆包|doubao|chatglm)/gi;
+    const mentionPattern = /@(claude|chatgpt|gemini|deepseek|qwen|kimi|豆包|doubao|chatglm|智谱清言|通义千问)/gi;
     const targetMatches = [...beforeArrow.matchAll(mentionPattern)];
-    const targetAIs = [...new Set(targetMatches.map(m => m[1].toLowerCase()))];
+    const targetAIs = [...new Set(targetMatches.map(m => normalizeAIName(m[1])))];
 
     // Extract sources and message (after arrow)
     // Find all @mentions in afterArrow, sources are all @mentions
     // Message is everything after the last @mention
     const sourceMatches = [...afterArrow.matchAll(mentionPattern)];
-    const sourceAIs = [...new Set(sourceMatches.map(m => m[1].toLowerCase()))];
+    const sourceAIs = [...new Set(sourceMatches.map(m => normalizeAIName(m[1])))];
 
     // Find where the actual message starts (after the last @mention)
     let actualMessage = afterArrow;
@@ -368,9 +389,9 @@ function parseMessage(message) {
   }
 
   // Pattern-based detection for @ mentions
-  const mentionPattern = /@(claude|chatgpt|gemini|deepseek|qwen|kimi|豆包|doubao|chatglm)/gi;
+  const mentionPattern = /@(claude|chatgpt|gemini|deepseek|qwen|kimi|豆包|doubao|chatglm|智谱清言|通义千问)/gi;
   const matches = [...message.matchAll(mentionPattern)];
-  const mentions = [...new Set(matches.map(m => m[1].toLowerCase()))];
+  const mentions = [...new Set(matches.map(m => normalizeAIName(m[1])))];
 
   // For exactly 2 AIs: use keyword detection (simpler syntax)
   // Last mentioned = source (being evaluated), first = target (doing evaluation)
@@ -378,8 +399,8 @@ function parseMessage(message) {
     const evalKeywords = /评价|看看|怎么样|怎么看|如何|讲的|说的|回答|赞同|同意|分析|认为|观点|看法|意见|借鉴|批评|补充|对比|evaluate|think of|opinion|review|agree|analysis|compare|learn from/i;
 
     if (evalKeywords.test(message)) {
-      const sourceAI = matches[matches.length - 1][1].toLowerCase();
-      const targetAI = matches[0][1].toLowerCase();
+      const sourceAI = normalizeAIName(matches[matches.length - 1][1]);
+      const targetAI = normalizeAIName(matches[0][1]);
 
       return {
         crossRef: true,
@@ -539,7 +560,7 @@ function log(message, type = 'info') {
     second: '2-digit'
   });
 
-  entry.innerHTML = `<span class="time">${time}</span>${message}`;
+  entry.innerHTML = `<span class="time">${time}</span>: ${message}`;
   logContainer.insertBefore(entry, logContainer.firstChild);
 
   // Auto-scroll to top to show newest entry
