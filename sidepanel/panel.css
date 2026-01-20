@@ -473,7 +473,8 @@ header .subtitle {
   border-top: 1px solid var(--border-subtle);
   padding-top: 12px;
   flex-shrink: 0;
-  max-height: 200px;
+  flex: 0 0 auto; /* 固定高度，不扩展 */
+  max-height: 180px; /* 减小最大高度 */
   min-height: 0;
   overflow: hidden;
   display: flex;
@@ -494,7 +495,7 @@ header .subtitle {
   font-family: 'Monaco', 'Consolas', monospace;
   min-height: 0;
   /* Limit the scrollable area height */
-  max-height: 150px;
+  max-height: 140px; /* 减小最大高度 */
 }
 
 .log-entry {
