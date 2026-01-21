@@ -3,16 +3,14 @@ export const AI_BRAND_COLORS = {
   claude: '#D97757',
   gemini: '#3186FF',
   chatglm: '#4268FA',
-  qwen: '#615CED',
   kimi: '#000000',
   deepseek: '#4D6BFE',
   doubao: '#1E37FC',
-  ernie: '#167ADF',
 } as const
 
 export const AI_GROUPS = {
   'US-AI': ['claude', 'chatgpt', 'gemini'] as const,
-  'CN-AI': ['deepseek', 'qwen', 'kimi', 'doubao', 'chatglm', 'ernie'] as const,
+  'CN-AI': ['deepseek', 'kimi', 'doubao', 'chatglm'] as const,
 }
 
 export const AI_DISPLAY_NAMES: Record<string, string> = {
@@ -20,11 +18,9 @@ export const AI_DISPLAY_NAMES: Record<string, string> = {
   chatgpt: 'ChatGPT',
   gemini: 'Gemini',
   deepseek: 'DeepSeek',
-  qwen: 'Qwen',
   kimi: 'Kimi',
   doubao: 'Doubao',
   chatglm: 'ChatGLM',
-  ernie: '文心一言',
 }
 
 export const AI_TYPES = [
@@ -32,11 +28,9 @@ export const AI_TYPES = [
   'chatgpt',
   'gemini',
   'deepseek',
-  'qwen',
   'kimi',
   'doubao',
   'chatglm',
-  'ernie',
 ] as const
 
 export const AI_URLS: Record<string, string> = {
@@ -44,11 +38,9 @@ export const AI_URLS: Record<string, string> = {
   chatgpt: 'https://chatgpt.com',
   gemini: 'https://gemini.google.com',
   deepseek: 'https://chat.deepseek.com',
-  qwen: 'https://chat.qwen.ai',
   kimi: 'https://kimi.com',
   doubao: 'https://www.doubao.com/chat/',
   chatglm: 'https://chatglm.cn',
-  ernie: 'https://ernie.baidu.com',
 }
 
 export const EXTENSION_ID_KEY = 'ai-roundtable-extension-id'

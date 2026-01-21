@@ -175,6 +175,7 @@
 
   let lastCapturedContent = '';
   let isCapturing = false;
+  let captureStartTime = 0;
 
   function checkForResponse(node) {
     if (isCapturing) return;
@@ -196,10 +197,17 @@
 
   async function waitForStreamingComplete() {
     if (isCapturing) {
-      console.log('[AI Panel] Claude already capturing, skipping...');
-      return;
+      // Check if stuck for more than 5 minutes, reset if so
+      if (isCapturing && Date.now() - captureStartTime > 300000) {
+        console.log('[AI Panel] Claude capture stuck, resetting isCapturing flag');
+        isCapturing = false;
+      } else {
+        console.log('[AI Panel] Claude already capturing, skipping...');
+        return;
+      }
     }
     isCapturing = true;
+    captureStartTime = Date.now();
 
     let previousContent = '';
     let stableCount = 0;
@@ -289,7 +297,9 @@
     if (responseBlocks.length > 0) {
       // Get the last non-thinking block
       const lastBlock = responseBlocks[responseBlocks.length - 1];
-      return lastBlock.innerText.trim();
+      // Capture HTML and convert to Markdown
+      const html = lastBlock.innerHTML.trim();
+      return htmlToMarkdown(html);
     }
 
     return null;
@@ -300,6 +310,174 @@
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  function htmlToMarkdown(html) {
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+
+    function processNode(node, context = { listDepth: 0, orderedIndex: 0 }) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return node.textContent;
+      }
+
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return '';
+      }
+
+      const tag = node.tagName.toLowerCase();
+
+      switch (tag) {
+        case 'h1':
+          return `# ${getTextContent(node)}\n\n`;
+        case 'h2':
+          return `## ${getTextContent(node)}\n\n`;
+        case 'h3':
+          return `### ${getTextContent(node)}\n\n`;
+        case 'h4':
+          return `#### ${getTextContent(node)}\n\n`;
+        case 'h5':
+          return `##### ${getTextContent(node)}\n\n`;
+        case 'h6':
+          return `###### ${getTextContent(node)}\n\n`;
+        case 'strong':
+        case 'b':
+          return `**${processChildren(node, context)}**`;
+        case 'em':
+        case 'i':
+          return `*${processChildren(node, context)}*`;
+        case 'code':
+          if (node.parentElement?.tagName.toLowerCase() !== 'pre') {
+            return `\`${node.textContent}\``;
+          }
+          return node.textContent;
+        case 'pre': {
+          const codeEl = node.querySelector('code');
+          const codeText = codeEl ? codeEl.textContent : node.textContent;
+          let lang = '';
+          const langClass = (codeEl?.className || node.className || '').match(/language-(\w+)/);
+          if (langClass) lang = langClass[1];
+          return `\n\`\`\`${lang}\n${codeText.trim()}\n\`\`\`\n\n`;
+        }
+        case 'p':
+          return `${processChildren(node, context)}\n\n`;
+        case 'br':
+          return '\n';
+        case 'hr':
+          return '---\n\n';
+        case 'ul': {
+          const items = Array.from(node.children)
+            .filter(c => c.tagName.toLowerCase() === 'li')
+            .map(li => processListItem(li, false, 0, context.listDepth))
+            .join('');
+          return items + '\n';
+        }
+        case 'ol': {
+          const items = Array.from(node.children)
+            .filter(c => c.tagName.toLowerCase() === 'li')
+            .map((li, idx) => processListItem(li, true, idx + 1, context.listDepth))
+            .join('');
+          return items + '\n';
+        }
+        case 'li':
+          return processChildren(node, context);
+        case 'a': {
+          const href = node.getAttribute('href') || '';
+          return `[${processChildren(node, context)}](${href})`;
+        }
+        case 'blockquote': {
+          const content = processChildren(node, context).trim().split('\n').map(line => `> ${line}`).join('\n');
+          return `${content}\n\n`;
+        }
+        case 'table':
+          return processTable(node) + '\n';
+        case 'thead':
+        case 'tbody':
+        case 'tfoot':
+        case 'tr':
+        case 'th':
+        case 'td':
+          return processChildren(node, context);
+        default:
+          return processChildren(node, context);
+      }
+    }
+
+    function processChildren(node, context) {
+      return Array.from(node.childNodes).map(child => processNode(child, context)).join('');
+    }
+
+    function getTextContent(node) {
+      return processChildren(node, { listDepth: 0, orderedIndex: 0 }).trim();
+    }
+
+    function processListItem(li, isOrdered, index, depth) {
+      const indent = '  '.repeat(depth);
+      const prefix = isOrdered ? `${index}. ` : '- ';
+
+      let content = '';
+      let hasNestedList = false;
+
+      for (const child of li.childNodes) {
+        const tag = child.tagName?.toLowerCase();
+        if (tag === 'ul' || tag === 'ol') {
+          hasNestedList = true;
+          const nestedItems = Array.from(child.children)
+            .filter(c => c.tagName.toLowerCase() === 'li')
+            .map((nestedLi, idx) => processListItem(nestedLi, tag === 'ol', idx + 1, depth + 1))
+            .join('');
+          content += '\n' + nestedItems;
+        } else if (child.nodeType === Node.TEXT_NODE) {
+          content += child.textContent;
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          content += processNode(child, { listDepth: depth, orderedIndex: 0 });
+        }
+      }
+
+      content = content.trim().replace(/\n\n+/g, '\n');
+
+      if (hasNestedList) {
+        const lines = content.split('\n');
+        const firstLine = lines[0];
+        const rest = lines.slice(1).join('\n');
+        return `${indent}${prefix}${firstLine}\n${rest}`;
+      }
+
+      return `${indent}${prefix}${content}\n`;
+    }
+
+    function processTable(table) {
+      const rows = table.querySelectorAll('tr');
+      if (rows.length === 0) return '';
+
+      let result = '';
+      let isFirstRow = true;
+
+      for (const row of rows) {
+        const cells = row.querySelectorAll('th, td');
+        const cellContents = Array.from(cells).map(cell =>
+          processChildren(cell, { listDepth: 0, orderedIndex: 0 }).trim().replace(/\|/g, '\\|').replace(/\n/g, ' ')
+        );
+
+        result += '| ' + cellContents.join(' | ') + ' |\n';
+
+        if (isFirstRow) {
+          result += '| ' + cellContents.map(() => '---').join(' | ') + ' |\n';
+          isFirstRow = false;
+        }
+      }
+
+      return result;
+    }
+
+    let markdown = '';
+    Array.from(temp.childNodes).forEach(node => {
+      markdown += processNode(node, { listDepth: 0, orderedIndex: 0 });
+    });
+
+    markdown = markdown.replace(/\n{3,}/g, '\n\n').trim();
+
+    return markdown;
   }
 
   function sleep(ms) {

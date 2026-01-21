@@ -302,7 +302,16 @@ async function ensureContentScriptAlive(aiType, tab) {
     await chrome.tabs.sendMessage(tab.id, { type: 'PING' }, { timeoutMs: 2000 });
     return true;
   } catch (err) {
-    console.log('[AI Panel] Content script dead for', aiType, ', reloading...');
+    console.log('[AI Panel] Content script ping failed for', aiType, ':', err.message);
+    // Don't automatically reload - this might interrupt an ongoing conversation
+    // Only reload if we're sure the script is not responding
+    const responses = await getStoredResponses();
+    if (responses[aiType]) {
+      console.log('[AI Panel] Script may be busy, has previous response, not reloading');
+      return true; // Assume it's alive if we have previous responses
+    }
+
+    console.log('[AI Panel] Content script appears dead for', aiType, ', reloading...');
     try {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
@@ -339,7 +348,7 @@ async function sendMessageToAI(aiType, message, retryCount = 0) {
         message
       }),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout after 10s')), 10000)
+        setTimeout(() => reject(new Error('Timeout after 30s')), 30000)
       )
     ]);
 
@@ -454,11 +463,11 @@ setInterval(async () => {
   try {
     const tabs = await chrome.tabs.query({});
     for (const tab of tabs) {
-      if (tab.url) {
+      if (tab.url && tab.active) { // Only check active tabs to reduce overhead
         const aiType = getAITypeFromUrl(tab.url);
         if (aiType) {
           chrome.tabs.sendMessage(tab.id, { type: 'HEARTBEAT' }).catch(() => {
-            console.log('[AI Panel] Heartbeat failed for', aiType, 'tab', tab.id);
+            // Silently ignore heartbeat failures - don't spam console
           });
         }
       }
@@ -466,7 +475,7 @@ setInterval(async () => {
   } catch (err) {
     // Ignore errors during heartbeat
   }
-}, 10000);
+}, 30000); // Increased from 10s to 30s
 
 async function startNewConversation(aiTypes) {
   const results = {};

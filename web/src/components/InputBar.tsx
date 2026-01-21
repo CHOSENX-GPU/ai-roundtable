@@ -127,19 +127,19 @@ export function InputBar({
         <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 border-b border-slate-200 flex-wrap">
           <button
             onClick={() => insertText('/mutual')}
-            className="px-2.5 py-1 text-sm font-medium bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 transition-colors"
+            className="px-3 py-1.5 text-base font-bold bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 transition-colors"
           >
             /mutual
           </button>
           <button
             onClick={() => insertText('/cross')}
-            className="px-2.5 py-1 text-sm font-medium bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 transition-colors"
+            className="px-3 py-1.5 text-base font-bold bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 transition-colors"
           >
             /cross
           </button>
           <button
             onClick={() => insertText('<-')}
-            className="px-2.5 py-1 text-sm font-medium bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 transition-colors"
+            className="px-3 py-1.5 text-base font-bold bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 transition-colors"
           >
             &larr;
           </button>
@@ -148,9 +148,10 @@ export function InputBar({
             <button
               key={ai}
               onClick={() => insertText(`@${AI_DISPLAY_NAMES[ai]}`)}
-              className="px-2.5 py-1 text-sm font-medium bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 transition-colors"
             >
-              @{AI_DISPLAY_NAMES[ai]}
+              @<img src={`/icons/${ai}-color.svg`} alt={ai} className="w-4 h-4 object-contain" />
+              {AI_DISPLAY_NAMES[ai]}
             </button>
           ))}
         </div>

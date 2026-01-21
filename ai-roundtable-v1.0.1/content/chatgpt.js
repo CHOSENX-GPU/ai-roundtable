@@ -197,6 +197,7 @@
 
   let lastCapturedContent = '';
   let isCapturing = false;
+  let captureStartTime = 0;
 
   function checkForResponse(node) {
     if (isCapturing) return;
@@ -220,10 +221,17 @@
     console.log('[AI Panel] ChatGPT waitForStreamingComplete called, isCapturing:', isCapturing);
 
     if (isCapturing) {
-      console.log('[AI Panel] ChatGPT already capturing, skipping...');
-      return;
+      // Check if stuck for more than 5 minutes, reset if so
+      if (Date.now() - captureStartTime > 300000) {
+        console.log('[AI Panel] ChatGPT capture stuck, resetting isCapturing flag');
+        isCapturing = false;
+      } else {
+        console.log('[AI Panel] ChatGPT already capturing, skipping...');
+        return;
+      }
     }
     isCapturing = true;
+    captureStartTime = Date.now();
     console.log('[AI Panel] ChatGPT starting capture loop...');
 
     let previousContent = '';
