@@ -396,98 +396,49 @@
     }
 
     function getLatestResponse() {
-        // Strategy 1: Try specific selectors first
-        const specificSelectors = [
-            // Generic assistant patterns
-            '[class*="assistant"]',
-            '[class*="answer"]',
-            '[class*="response"]',
-            '[class*="bot"]',
-            '[data-role="assistant"]',
-            '[role="assistant"]',
-            // Markdown containers
-            '.markdown-body',
-            '[class*="markdown"]',
-            // Message content patterns
-            '[class*="message-content"]',
-            '[class*="msg-content"]',
-            '[class*="chat-content"]'
+        // Strategy 1: Use Qwen-specific selectors (discovered via DOM inspection)
+        // AI messages have class: qwen-chat-message-assistant
+        // Content is in: .qwen-markdown
+        const assistantMessages = document.querySelectorAll('.qwen-chat-message-assistant .qwen-markdown');
+
+        if (assistantMessages.length > 0) {
+            const lastMessage = assistantMessages[assistantMessages.length - 1];
+            const text = lastMessage.innerText?.trim() || '';
+            if (text.length > 5) {
+                updateDebug(`Found: ${text.length} chars (qwen-markdown)`);
+                console.log('[AI Panel] Qwen found via .qwen-chat-message-assistant .qwen-markdown, len:', text.length);
+                return text;
+            }
+        }
+
+        // Strategy 2: Fallback to generic assistant patterns
+        const fallbackSelectors = [
+            '[data-role="assistant"] .qwen-markdown',
+            '[class*="assistant"][class*="message"] [class*="markdown"]',
+            '[class*="assistant"] [class*="content"]'
         ];
 
-        let bestContent = null;
-        let maxLength = 0;
-
-        for (const selector of specificSelectors) {
+        for (const selector of fallbackSelectors) {
             try {
                 const elements = document.querySelectorAll(selector);
                 if (elements.length > 0) {
-                    // Get the LAST matching element (most recent message)
                     const lastEl = elements[elements.length - 1];
                     const text = lastEl.innerText?.trim() || '';
-
-                    if (text.length > maxLength && text.length > 5) {
+                    if (text.length > 5) {
                         // Make sure it's not the user's own message
                         const isUserMessage = lastEl.closest('[class*="user"]') ||
+                            lastEl.closest('.qwen-chat-message-user') ||
                             lastEl.closest('[data-role="user"]');
                         if (!isUserMessage) {
-                            maxLength = text.length;
-                            bestContent = text;
-                            console.log('[AI Panel] Qwen found via selector:', selector, 'len:', text.length);
+                            updateDebug(`Fallback: ${text.length} chars`);
+                            console.log('[AI Panel] Qwen fallback found via:', selector, 'len:', text.length);
+                            return text;
                         }
                     }
                 }
             } catch (e) {
                 // Ignore selector errors
             }
-        }
-
-        if (bestContent && bestContent.length > 10) {
-            return bestContent;
-        }
-
-        // Strategy 2: FALLBACK - Find the largest text block in the main area
-        // This is aggressive but should catch any response
-        console.log('[AI Panel] Qwen using fallback DOM scan...');
-
-        const mainArea = document.querySelector('main') ||
-            document.querySelector('[class*="chat"]') ||
-            document.querySelector('[class*="conversation"]') ||
-            document.body;
-
-        // Find all divs with substantial text
-        const allDivs = mainArea.querySelectorAll('div');
-        let longestText = '';
-        let longestDiv = null;
-
-        for (const div of allDivs) {
-            // Skip tiny divs, input areas, and navigation
-            if (div.offsetHeight < 20) continue;
-            if (div.querySelector('textarea') || div.querySelector('input')) continue;
-            if (div.closest('nav') || div.closest('header') || div.closest('footer')) continue;
-
-            const text = div.innerText?.trim() || '';
-
-            // Skip if this is clearly a user message (short, matches input)
-            if (text.length < 20) continue;
-
-            // Prefer divs that contain markdown-like content or longer text
-            if (text.length > longestText.length) {
-                // Make sure this div doesn't contain the input area
-                const hasInput = div.querySelector('textarea, [contenteditable]');
-                if (!hasInput) {
-                    longestText = text;
-                    longestDiv = div;
-                }
-            }
-        }
-
-        // Strategy 2: FALLBACK
-        // ...
-
-        if (longestText.length > 20) {
-            updateDebug(`Fallback Found: ${longestText.length} chars`);
-            console.log('[AI Panel] Qwen fallback found text, len:', longestText.length);
-            return longestText;
         }
 
         updateDebug('No content found (scanning...)');

@@ -288,19 +288,18 @@
 
     if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
-      // Use innerText to preserve line breaks
-      const content = lastMessage.innerText.trim();
-      console.log('[AI Panel] Gemini response found, length:', content.length);
-      return content;
+      const html = lastMessage.innerHTML.trim();
+      console.log('[AI Panel] Gemini response found, length:', html.length);
+      return htmlToMarkdown(html);
     }
 
     // Fallback to message-content
     const fallback = document.querySelectorAll('message-content');
     if (fallback.length > 0) {
       const lastMessage = fallback[fallback.length - 1];
-      const content = lastMessage.innerText.trim();
-      console.log('[AI Panel] Gemini response (fallback), length:', content.length);
-      return content;
+      const html = lastMessage.innerHTML.trim();
+      console.log('[AI Panel] Gemini response (fallback), length:', html.length);
+      return htmlToMarkdown(html);
     }
 
     console.log('[AI Panel] Gemini: no response found');
@@ -312,6 +311,94 @@
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  function htmlToMarkdown(html) {
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+
+    let markdown = '';
+
+    function processNode(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        return node.textContent;
+      }
+
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return '';
+      }
+
+      const tag = node.tagName.toLowerCase();
+      const children = Array.from(node.childNodes).map(processNode).join('');
+
+      switch (tag) {
+        case 'h1':
+          return `# ${children}\n\n`;
+        case 'h2':
+          return `## ${children}\n\n`;
+        case 'h3':
+          return `### ${children}\n\n`;
+        case 'h4':
+          return `#### ${children}\n\n`;
+        case 'h5':
+          return `##### ${children}\n\n`;
+        case 'h6':
+          return `###### ${children}\n\n`;
+        case 'strong':
+        case 'b':
+          return `**${children}**`;
+        case 'em':
+        case 'i':
+          return `*${children}*`;
+        case 'code':
+          return `\`${children}\``;
+        case 'pre':
+          const code = node.querySelector('code');
+          const codeText = code ? code.textContent : node.textContent;
+          return `\`\`\`\n${codeText}\n\`\`\`\n\n`;
+        case 'p':
+          return `${children}\n\n`;
+        case 'br':
+          return '\n';
+        case 'hr':
+          return '---\n\n';
+        case 'ul':
+          return `${children}\n`;
+        case 'ol':
+          return `${children}\n`;
+        case 'li':
+          const parent = node.parentElement;
+          const isInOl = parent && parent.tagName.toLowerCase() === 'ol';
+          if (isInOl) {
+            return `${children}\n`;
+          } else {
+            return `- ${children}\n`;
+          }
+        case 'a':
+          const href = node.getAttribute('href') || '';
+          return `[${children}](${href})`;
+        case 'blockquote':
+          return `> ${children}\n\n`;
+        case 'table':
+        case 'thead':
+        case 'tbody':
+        case 'tr':
+        case 'th':
+        case 'td':
+          return children;
+        default:
+          return children;
+      }
+    }
+
+    Array.from(temp.childNodes).forEach(node => {
+      markdown += processNode(node);
+    });
+
+    markdown = markdown.replace(/<li>/g, '').replace(/<\/li>/g, '');
+    markdown = markdown.replace(/\n{3,}/g, '\n\n').trim();
+
+    return markdown;
   }
 
   function sleep(ms) {

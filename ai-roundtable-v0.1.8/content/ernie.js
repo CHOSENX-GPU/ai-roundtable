@@ -90,32 +90,60 @@
     setupResponseObserver();
 
     async function injectMessage(text) {
-        // Ernie uses a standard textarea usually
-        let inputEl = document.querySelector('#ba-input-textarea') ||
-            document.querySelector('textarea.ant-input') ||
-            document.querySelector('textarea[placeholder*="输入"]');
+        // ERNIE uses a contenteditable div, not textarea
+        // Discovered via DOM inspection: [role="textbox"] or div[class*="editable"]
+        let inputEl = document.querySelector('[role="textbox"]') ||
+            document.querySelector('div[class*="editable"]') ||
+            document.querySelector('[contenteditable="true"]');
 
         if (!inputEl) {
-            // Fallback usually works
+            // Fallback to textarea if contenteditable not found
             inputEl = document.querySelector('textarea');
         }
 
         if (!inputEl) throw new Error('Could not find input field');
 
         inputEl.focus();
-        inputEl.value = text;
-        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
-        inputEl.dispatchEvent(new Event('change', { bubbles: true }));
 
-        await sleep(200);
+        // Handle contenteditable div differently from textarea
+        if (inputEl.getAttribute('contenteditable') === 'true' || inputEl.getAttribute('role') === 'textbox') {
+            // Contenteditable div - use textContent/innerText
+            inputEl.textContent = '';  // Clear first
+            inputEl.focus();
 
-        // Click send button or Enter
-        const sendBtn = document.querySelector('div.send-button') ||
+            // Use document.execCommand for better React compatibility
+            document.execCommand('insertText', false, text);
+
+            // Fallback: direct text setting
+            if (!inputEl.textContent || inputEl.textContent.trim() !== text.trim()) {
+                inputEl.textContent = text;
+                inputEl.innerText = text;
+            }
+
+            // Dispatch input events for React
+            inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+            inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+            inputEl.dispatchEvent(new InputEvent('input', { bubbles: true, data: text }));
+        } else {
+            // Textarea fallback
+            inputEl.value = text;
+            inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+            inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        await sleep(300);
+
+        // Click send button - ERNIE uses div[class*="send"]
+        const sendBtn = document.querySelector('div[class*="send"]') ||
+            document.querySelector('div.send-button') ||
             document.querySelector('button[class*="send"]');
 
         if (sendBtn) {
+            console.log('[AI Panel] ERNIE clicking send button');
             sendBtn.click();
         } else {
+            // Fallback: try Enter key
+            console.log('[AI Panel] ERNIE send button not found, trying Enter key');
             const enterEvent = new KeyboardEvent('keydown', {
                 key: 'Enter',
                 code: 'Enter',
@@ -225,45 +253,52 @@
     }
 
     function getLatestResponse() {
-        // Ernie Selectors
-        // Since I don't know exact ones, I'll use the Aggressive Strategy from Qwen
+        // ERNIE Selectors - discovered via DOM inspection
+        // AI response text is in: div[class*="fullText"]
 
-        // 1. Try common selectors
-        const selectors = [
-            '.ernie-message',
+        // Strategy 1: Use ERNIE-specific selector
+        const fullTextElements = document.querySelectorAll('div[class*="fullText"]');
+        if (fullTextElements.length > 0) {
+            const lastEl = fullTextElements[fullTextElements.length - 1];
+            const text = lastEl.innerText?.trim() || '';
+            if (text.length > 5) {
+                updateDebug(`Found: ${text.length} chars (fullText)`);
+                console.log('[AI Panel] ERNIE found via div[class*="fullText"], len:', text.length);
+                return text;
+            }
+        }
+
+        // Strategy 2: Try other common selectors
+        const fallbackSelectors = [
+            'div[class*="typingContainer"]',
+            'div[class*="content"]',
             '[class*="assistant"]',
             '[class*="bot-message"]',
             '[class*="markdown-body"]'
         ];
 
-        for (const s of selectors) {
-            const els = document.querySelectorAll(s);
-            if (els.length > 0) {
-                const last = els[els.length - 1];
-                if (last.innerText.length > 5) return last.innerText;
-            }
-        }
-
-        // 2. Fallback: Find largest text div
-        const main = document.querySelector('main') || document.body;
-        const divs = main.querySelectorAll('div');
-        let longest = '';
-
-        for (const div of divs) {
-            if (div.innerText.length > longest.length && div.innerText.length > 10) {
-                // Ensure not input
-                if (!div.querySelector('textarea')) {
-                    longest = div.innerText;
+        for (const s of fallbackSelectors) {
+            try {
+                const els = document.querySelectorAll(s);
+                if (els.length > 0) {
+                    const last = els[els.length - 1];
+                    const text = last.innerText?.trim() || '';
+                    if (text.length > 5) {
+                        // Make sure not user input
+                        if (!last.closest('[role="textbox"]') && !last.querySelector('[contenteditable]')) {
+                            updateDebug(`Fallback: ${text.length} chars`);
+                            console.log('[AI Panel] ERNIE fallback found via:', s, 'len:', text.length);
+                            return text;
+                        }
+                    }
                 }
+            } catch (e) {
+                // Ignore selector errors
             }
-        }
-
-        if (longest.length > 10) {
-            updateDebug(`Fallback Found: ${longest.length} chars (div)`);
-            return longest;
         }
 
         updateDebug('Scanning... No content found');
+        console.log('[AI Panel] ERNIE could not find any response');
         return null;
     }
 
