@@ -1,21 +1,22 @@
 # AI 圆桌 (AI Roundtable)
 
-![GitHub Repo stars](https://img.shields.io/github/stars/axtonliu/ai-roundtable?style=social)
-![GitHub forks](https://img.shields.io/github/forks/axtonliu/ai-roundtable?style=social)
-![License](https://img.shields.io/github/license/axtonliu/ai-roundtable)
+![GitHub Repo stars](https://img.shields.io/github/stars/CHOSENX-GPU/ai-roundtable?style=social)
+![GitHub forks](https://img.shields.io/github/forks/CHOSENX-GPU/ai-roundtable?style=social)
+![License](https://img.shields.io/github/license/CHOSENX-GPU/ai-roundtable)
 
 > **Forked from [axtonliu/ai-roundtable](https://github.com/axtonliu/ai-roundtable) with enhancements**
 
 让多个 AI 助手围桌讨论，交叉评价，深度协作
 
-**本版本修改内容：**
-- ✨ 新增中国 AI 支持：DeepSeek、通义千问（Qwen）、Kimi、豆包、智谱清言（ChatGLM）
-- 🔧 修复连接中断问题，添加动态刷新能力，提升长时间对话稳定性
-- 🎨 全新 Apple Dark Mode 风格 UI 设计，玻璃拟态风格
-- ✅ 修复豆包回复重复捕获问题，添加内容去重机制
-- ✅ 修复 AI 评价中断问题，优化长消息处理和重试机制
-- 🆕 新增一键开启新对话功能
-- 🌏 优化中国 AI 平台的适配体验
+**v1.0.1 更新内容：**
+- 🐛 修复对话中断问题：优化 content script 健康检查、增加超时时间、改进心跳机制
+- 🐛 修复 `isCapturing` 标志卡死问题（5分钟超时自动恢复）
+- 🐛 修复消息发送超时（10s → 30s）
+- 🔧 减少心跳频率（10s → 30s，仅检查活动标签页）
+- 🔧 改进消息捕获逻辑（Markdown 渲染、表格、列表、代码块）
+- 🎨 添加 CHOSENX 品牌标识
+- 🔧 移除 Qwen 和文心一言支持（保留 7 个 AI）
+- 🔧 优化插件与 Web App 配对体验
 
 **原项目特性保留：**
 
@@ -27,7 +28,7 @@
 
 ---
 
-一个 Chrome 扩展，让你像"会议主持人"一样，同时操控多个 AI（Claude、ChatGPT、Gemini、DeepSeek、Qwen、Kimi、豆包、ChatGLM），实现真正的 AI 圆桌会议。
+一个 Chrome 扩展，让你像"会议主持人"一样，同时操控多个 AI（Claude、ChatGPT、Gemini、DeepSeek、Kimi、豆包、ChatGLM），实现真正的 AI 圆桌会议。
 
 <!-- TODO: 添加 GIF 演示 -->
 <!-- ![Demo GIF](assets/demo.gif) -->
@@ -42,7 +43,7 @@
 
 ## 核心特性
 
-- **统一控制台** - 通过 Chrome 侧边栏同时管理 8 个 AI（4 个国际 + 4 个中国）
+- **统一控制台** - 通过 Chrome 侧边栏同时管理 7 个 AI（3 个国际 + 4 个中国）
 - **多目标发送** - 一条消息同时发给多个 AI，对比回答
 - **互评模式** - 让所有 AI 互相评价，对等参与（/mutual 命令）
 - **交叉引用** - 让 Claude 评价 ChatGPT 的回答，或反过来
@@ -59,8 +60,7 @@
 | ChatGPT | OpenAI | https://chatgpt.com |
 | Gemini | Google | https://gemini.google.com |
 | DeepSeek | DeepSeek | https://chat.deepseek.com |
-| Qwen 通义千问 | 阿里云 | https://tongyi.aliyun.com/qianwen/ |
-| Kimi | 月之暗面 | https://kimi.moonshot.cn |
+| Kimi | 月之暗面 | https://kimi.com |
 | 豆包 | 字节跳动 | https://www.doubao.com/chat/ |
 | ChatGLM | 智谱清言 | https://chatglm.cn |
 
@@ -97,8 +97,7 @@
    - [ChatGPT](https://chatgpt.com)
    - [Gemini](https://gemini.google.com)
    - [DeepSeek](https://chat.deepseek.com)
-   - [通义千问](https://tongyi.aliyun.com/qianwen/)
-   - [Kimi](https://kimi.moonshot.cn)
+   - [Kimi](https://kimi.com)
    - [豆包](https://www.doubao.com/chat/)
    - [智谱清言](https://chatglm.cn)
 
@@ -205,6 +204,19 @@ ai-roundtable/
 ```
 
 ## 版本历史
+
+### v1.0.1 (2025-01-22)
+
+**Bug 修复**:
+- 🐛 修复对话中断问题：优化 content script 健康检查、增加超时时间、改进心跳机制
+- 🐛 修复 `isCapturing` 标志卡死问题（5分钟超时自动恢复）
+- 🐛 修复消息发送超时（10s → 30s）
+
+**优化改进**:
+- 🔧 减少心跳频率（10s → 30s，仅检查活动标签页）
+- 🔧 改进消息捕获逻辑（Markdown 渲染、表格、列表、代码块）
+- 🔧 添加 CHOSENX 品牌标识
+- 🔧 移除 Qwen 和文心一言支持（保留 7 个 AI）
 
 ### v0.1.6 (2025-01-21)
 

@@ -7,7 +7,7 @@
 ![下载 ZIP](https://img.shields.io/badge/下载-ZIP-blue)
 
 1. 访问 [GitHub Releases](https://github.com/CHOSENX-GPU/ai-roundtable/releases)
-2. 下载 `ai-roundtable-v0.1.7.zip`
+2. 下载 `ai-roundtable-v1.0.1.zip`
 3. 解压到文件夹（例如：`D:\ai-roundtable\`）
 4. 打开 Chrome 浏览器
 5. 地址栏输入：`chrome://extensions/`
@@ -137,7 +137,7 @@
 
 ## 📚 进阶技巧
 
-### 1. 使用 @ 语法快速指定目标
+### 使用 @ 语法快速指定目标
 
 ```
 @Claude 请解释什么是机器学习
@@ -146,7 +146,7 @@
 
 ### 2. 批量测试多个 AI
 
-1. 勾选所有 8 个 AI
+1. 勾选所有 7 个 AI
 2. 发送测试问题
 3. 对比它们的回答质量和风格
 
@@ -190,7 +190,7 @@ Round 4: /mutual 请综合三方观点得出结论
 
 ## 🆘 需要帮助？
 
-- 📖 [完整文档](https://github.com/CHOSENX-GPU/ai-roundtable/blob/master/README.md)
+- 📖 [完整文档](https://github.com/CHOSENX-GPU/ai-roundtable/blob/dev/README.md)
 - 🐛 [报告问题](https://github.com/CHOSENX-GPU/ai-roundtable/issues)
 - 💬 [讨论区](https://github.com/CHOSENX-GPU/ai-roundtable/discussions)
 
