@@ -253,38 +253,50 @@
     }
 
     function getLatestResponse() {
-        // ERNIE Selectors - discovered via DOM inspection
-        // AI response text is in: div[class*="fullText"]
+        // ERNIE Selectors - discovered via LIVE DOM inspection during actual chat
+        // The chat interface uses different selectors than the landing page
 
-        // Strategy 1: Use ERNIE-specific selector
-        const fullTextElements = document.querySelectorAll('div[class*="fullText"]');
-        if (fullTextElements.length > 0) {
-            const lastEl = fullTextElements[fullTextElements.length - 1];
-            const text = lastEl.innerText?.trim() || '';
-            if (text.length > 5) {
-                updateDebug(`Found: ${text.length} chars (fullText)`);
-                console.log('[AI Panel] ERNIE found via div[class*="fullText"], len:', text.length);
-                return text;
+        // Strategy 1: Use ERNIE chat-specific selectors (discovered via live testing)
+        const chatSelectors = [
+            'div.custom-html.md-stream-desktop',  // Main markdown response container
+            'div.custom-html',                      // Fallback markdown container
+            'div[class*="answerBox"]',             // Answer box container
+            'div[class*="roleSystemBot"] [class*="content"]'  // Bot message content
+        ];
+
+        for (const selector of chatSelectors) {
+            try {
+                const elements = document.querySelectorAll(selector);
+                if (elements.length > 0) {
+                    const lastEl = elements[elements.length - 1];
+                    const text = lastEl.innerText?.trim() || '';
+                    if (text.length > 5) {
+                        // Make sure it's not user input
+                        if (!lastEl.closest('[role="textbox"]') && !lastEl.closest('[class*="user"]')) {
+                            updateDebug(`Found: ${text.length} chars (${selector})`);
+                            console.log('[AI Panel] ERNIE found via:', selector, 'len:', text.length);
+                            return text;
+                        }
+                    }
+                }
+            } catch (e) {
+                // Ignore selector errors
             }
         }
 
-        // Strategy 2: Try other common selectors
-        const fallbackSelectors = [
-            'div[class*="typingContainer"]',
-            'div[class*="content"]',
-            '[class*="assistant"]',
-            '[class*="bot-message"]',
-            '[class*="markdown-body"]'
+        // Strategy 2: Fallback to landing page selectors (for greeting etc)
+        const landingSelectors = [
+            'div[class*="fullText"]',
+            'div[class*="typingContainer"]'
         ];
 
-        for (const s of fallbackSelectors) {
+        for (const s of landingSelectors) {
             try {
                 const els = document.querySelectorAll(s);
                 if (els.length > 0) {
                     const last = els[els.length - 1];
                     const text = last.innerText?.trim() || '';
                     if (text.length > 5) {
-                        // Make sure not user input
                         if (!last.closest('[role="textbox"]') && !last.querySelector('[contenteditable]')) {
                             updateDebug(`Fallback: ${text.length} chars`);
                             console.log('[AI Panel] ERNIE fallback found via:', s, 'len:', text.length);

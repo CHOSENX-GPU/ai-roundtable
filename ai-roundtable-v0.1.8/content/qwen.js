@@ -23,36 +23,8 @@
         }
     }
 
-    // Navigate to new chat if needed
-    // ...
-
-    // --- VISUAL DEBUGGER ---
-    const debugPanel = document.createElement('div');
-    debugPanel.style.cssText = `
-        position: fixed;
-        bottom: 10px;
-        right: 10px;
-        background: rgba(0, 0, 0, 0.8);
-        color: #0f0;
-        padding: 10px;
-        z-index: 999999;
-        font-family: monospace;
-        font-size: 12px;
-        pointer-events: none;
-        border-radius: 5px;
-        max-width: 300px;
-    `;
-    debugPanel.innerHTML = '[AI Panel] Script Loaded<br>Waiting for content...';
-    document.body.appendChild(debugPanel);
-
-    function updateDebug(text) {
-        debugPanel.innerHTML = `[AI Panel]<br>${text}`;
-    }
-
-    // Connect to background
-    updateDebug('Connecting to extension...');
+    // Notify background that content script is ready
     safeSendMessage({ type: 'CONTENT_SCRIPT_READY', aiType: AI_TYPE });
-
 
     // Listen for messages from background script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -182,24 +154,6 @@
         return null;
     }
 
-    async function waitForButtonEnabled(button, maxWait = 2000) {
-        const start = Date.now();
-        // Wait for button to be clickable (not disabled and not aria-disabled)
-        while (Date.now() - start < maxWait) {
-            const isDisabled = !!button.disabled ||
-                button.getAttribute('aria-disabled') === 'true' ||
-                button.classList.contains('disabled') ||
-                button.style.opacity === '0' ||
-                button.style.pointerEvents === 'none';
-            if (!isDisabled) {
-                console.log('[AI Panel] Qwen button is enabled, proceeding with click');
-                return;
-            }
-            await sleep(50);
-        }
-        console.log('[AI Panel] Qwen button still disabled after wait, clicking anyway');
-    }
-
     function setupResponseObserver() {
         const observer = new MutationObserver((mutations) => {
             // Check context validity in observer callback
@@ -232,16 +186,6 @@
         } else {
             startObserving();
         }
-
-        // Fallback polling every 2 seconds to catch what MutationObserver might miss
-        setInterval(() => {
-            if (isCapturing) return;
-            const response = getLatestResponse();
-            if (response && response !== lastCapturedContent && response.length > lastCapturedContent.length) {
-                console.log('[AI Panel] Qwen polling found new content...');
-                waitForStreamingComplete();
-            }
-        }, 2000);
     }
 
     let lastCapturedContent = '';
@@ -266,45 +210,6 @@
         }
     }
 
-    function htmlToMarkdown(element) {
-        if (!element) return '';
-        const clone = element.cloneNode(true);
-
-        // Remove copy buttons and other UI elements
-        clone.querySelectorAll('button, .copy-btn, .sr-only').forEach(el => el.remove());
-
-        // Process code blocks first to protect content
-        clone.querySelectorAll('pre').forEach(pre => {
-            const code = pre.querySelector('code');
-            const langClass = code ? code.className : '';
-            const langMatch = langClass.match(/language-(\w+)/) || pre.className.match(/language-(\w+)/);
-            const lang = langMatch ? langMatch[1] : '';
-            const content = code ? code.textContent : pre.textContent;
-            pre.textContent = `\n\`\`\`${lang}\n${content}\n\`\`\`\n`;
-        });
-
-        // Inline code
-        clone.querySelectorAll('code').forEach(el => {
-            if (el.parentElement.tagName !== 'PRE') {
-                el.textContent = `\`${el.textContent}\``;
-            }
-        });
-
-        // Block elements spacing
-        clone.querySelectorAll('p, div').forEach(el => {
-            el.appendChild(document.createTextNode('\n\n'));
-        });
-
-        // Bold/Italic
-        clone.querySelectorAll('strong, b').forEach(el => el.textContent = `**${el.textContent}**`);
-        clone.querySelectorAll('em, i').forEach(el => el.textContent = `*${el.textContent}*`);
-
-        // Lists
-        clone.querySelectorAll('li').forEach(el => el.textContent = `- ${el.textContent}\n`);
-
-        return clone.textContent.trim().replace(/\n{3,}/g, '\n\n');
-    }
-
     async function waitForStreamingComplete() {
         if (isCapturing) {
             console.log('[AI Panel] Qwen already capturing, skipping...');
@@ -313,10 +218,9 @@
         isCapturing = true;
 
         let previousContent = '';
-        let previousLength = 0;
         let stableCount = 0;
         const maxWait = 600000;  // 10 minutes
-        const checkInterval = 500;  // Slightly relaxed check
+        const checkInterval = 500;
         const stableThreshold = 4;  // ~2 seconds stable
 
         const startTime = Date.now();
@@ -330,34 +234,17 @@
 
                 await sleep(checkInterval);
 
-                // Check if still streaming - Qwen specific indicators
+                // Check if still streaming
                 const isStreaming = document.querySelector('[class*="loading"]') ||
                     document.querySelector('[class*="streaming"]') ||
-                    document.querySelector('[class*="typing"]') ||
-                    document.querySelector('[class*="generating"]') ||
-                    document.querySelector('button[aria-label*="停止"]') ||
-                    document.querySelector('button[aria-label*="Stop"]');
-                // Removed .cursor-blink as it can match input cursor and cause indefinite waiting
+                    document.querySelector('button[aria-label*="停止"]');
 
                 const currentContent = getLatestResponse() || '';
-                const currentLength = currentContent.length;
 
-                // Log for debugging
-                if (stableCount % 5 === 0) {
-                    console.log('[AI Panel] Qwen streaming - length:', currentLength, 'streaming:', !!isStreaming);
-                }
-
-                // Consider complete if:
-                // 1. Not streaming AND content has been stable
-                // 2. OR content stopped growing AND not streaming
-                const contentStable = currentContent === previousContent && currentLength > 0;
-                const stoppedGrowing = currentLength === previousLength && currentLength > 0;
-
-                if ((!isStreaming && contentStable) || (!isStreaming && stoppedGrowing)) {
+                if (!isStreaming && currentContent === previousContent && currentContent.length > 0) {
                     stableCount++;
                     if (stableCount >= stableThreshold) {
-                        // Final check - make sure we have substantial content
-                        if (currentContent.length > 5 && currentContent !== lastCapturedContent) {
+                        if (currentContent !== lastCapturedContent) {
                             lastCapturedContent = currentContent;
                             safeSendMessage({
                                 type: 'RESPONSE_CAPTURED',
@@ -365,30 +252,14 @@
                                 content: currentContent
                             });
                             console.log('[AI Panel] Qwen response captured, length:', currentContent.length);
-                        } else if (currentContent.length <= 5) {
-                            console.log('[AI Panel] Qwen response too short, waiting...');
-                            stableCount = 0;  // Reset and wait more
                         }
                         return;
                     }
                 } else {
-                    // Content is still changing or still streaming
                     stableCount = 0;
                 }
 
                 previousContent = currentContent;
-                previousLength = currentLength;
-            }
-
-            // Timeout reached
-            const finalContent = getLatestResponse() || '';
-            if (finalContent.length > 5 && finalContent !== lastCapturedContent) {
-                lastCapturedContent = finalContent;
-                safeSendMessage({
-                    type: 'RESPONSE_CAPTURED',
-                    aiType: AI_TYPE,
-                    content: finalContent
-                });
             }
         } finally {
             isCapturing = false;
@@ -396,26 +267,46 @@
     }
 
     function getLatestResponse() {
-        // Strategy 1: Use Qwen-specific selectors (discovered via DOM inspection)
-        // AI messages have class: qwen-chat-message-assistant
-        // Content is in: .qwen-markdown
+        // Strategy 1: Use Qwen-specific selectors
         const assistantMessages = document.querySelectorAll('.qwen-chat-message-assistant .qwen-markdown');
 
         if (assistantMessages.length > 0) {
             const lastMessage = assistantMessages[assistantMessages.length - 1];
-            const text = lastMessage.innerText?.trim() || '';
-            if (text.length > 5) {
-                updateDebug(`Found: ${text.length} chars (qwen-markdown)`);
-                console.log('[AI Panel] Qwen found via .qwen-chat-message-assistant .qwen-markdown, len:', text.length);
+            // Use HTML to preserve Markdown formatting
+            const html = lastMessage.innerHTML.trim();
+            if (html.length > 0) {
+                console.log('[AI Panel] Qwen found via .qwen-markdown, html length:', html.length);
+                return htmlToMarkdown(html);
+            }
+        }
+
+        // Strategy 2: Try to find ANY assistant message with markdown
+        const allAssistantMessages = document.querySelectorAll('.qwen-chat-message-assistant');
+        if (allAssistantMessages.length > 0) {
+            const lastAssistant = allAssistantMessages[allAssistantMessages.length - 1];
+            const markdownContent = lastAssistant.querySelector('.qwen-markdown, [class*="markdown"], [class*="content"]');
+            if (markdownContent) {
+                const html = markdownContent.innerHTML.trim();
+                if (html.length > 0) {
+                    console.log('[AI Panel] Qwen found via assistant message, html length:', html.length);
+                    return htmlToMarkdown(html);
+                }
+            }
+            // Last resort - use innerText
+            const text = lastAssistant.innerText?.trim();
+            if (text && text.length > 0) {
+                console.log('[AI Panel] Qwen fallback to innerText, length:', text.length);
                 return text;
             }
         }
 
-        // Strategy 2: Fallback to generic assistant patterns
+        // Strategy 3: Generic assistant patterns
         const fallbackSelectors = [
-            '[data-role="assistant"] .qwen-markdown',
-            '[class*="assistant"][class*="message"] [class*="markdown"]',
-            '[class*="assistant"] [class*="content"]'
+            '[data-role="assistant"]',
+            '[class*="assistant"][class*="message"]',
+            '[class*="assistant"] [class*="markdown"]',
+            '[class*="assistant"] [class*="content"]',
+            '.markdown-body'
         ];
 
         for (const selector of fallbackSelectors) {
@@ -423,27 +314,126 @@
                 const elements = document.querySelectorAll(selector);
                 if (elements.length > 0) {
                     const lastEl = elements[elements.length - 1];
-                    const text = lastEl.innerText?.trim() || '';
-                    if (text.length > 5) {
-                        // Make sure it's not the user's own message
-                        const isUserMessage = lastEl.closest('[class*="user"]') ||
-                            lastEl.closest('.qwen-chat-message-user') ||
-                            lastEl.closest('[data-role="user"]');
-                        if (!isUserMessage) {
-                            updateDebug(`Fallback: ${text.length} chars`);
-                            console.log('[AI Panel] Qwen fallback found via:', selector, 'len:', text.length);
-                            return text;
+                    // Make sure it's not the user's own message
+                    const isUserMessage = lastEl.closest('[class*="user"]') ||
+                        lastEl.closest('.qwen-chat-message-user') ||
+                        lastEl.closest('[data-role="user"]');
+                    if (!isUserMessage) {
+                        const html = lastEl.innerHTML?.trim() || lastEl.innerText?.trim();
+                        if (html && html.length > 0) {
+                            console.log('[AI Panel] Qwen fallback via:', selector, 'length:', html.length);
+                            // If it has HTML structure, convert it
+                            if (lastEl.innerHTML.includes('<')) {
+                                return htmlToMarkdown(html);
+                            }
+                            return html;
                         }
                     }
                 }
             } catch (e) {
-                // Ignore selector errors
+                console.log('[AI Panel] Qwen selector error:', selector, e.message);
             }
         }
 
-        updateDebug('No content found (scanning...)');
         console.log('[AI Panel] Qwen could not find any response');
         return null;
+    }
+
+    function htmlToMarkdown(html) {
+        // Create a temporary div to parse HTML
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+
+        let markdown = '';
+
+        function processNode(node) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                return node.textContent;
+            }
+
+            if (node.nodeType !== Node.ELEMENT_NODE) {
+                return '';
+            }
+
+            const tag = node.tagName.toLowerCase();
+            const children = Array.from(node.childNodes).map(processNode).join('');
+
+            switch (tag) {
+                case 'h1':
+                    return `# ${children}\n\n`;
+                case 'h2':
+                    return `## ${children}\n\n`;
+                case 'h3':
+                    return `### ${children}\n\n`;
+                case 'h4':
+                    return `#### ${children}\n\n`;
+                case 'h5':
+                    return `##### ${children}\n\n`;
+                case 'h6':
+                    return `###### ${children}\n\n`;
+                case 'strong':
+                case 'b':
+                    return `**${children}**`;
+                case 'em':
+                case 'i':
+                    return `*${children}*`;
+                case 'code':
+                    // Check if inside pre - if so, let parent handle it
+                    if (node.parentElement?.tagName === 'PRE') {
+                        return children;
+                    }
+                    return `\`${children}\``;
+                case 'pre':
+                    const code = node.querySelector('code');
+                    const codeText = code ? code.textContent : node.textContent;
+                    // Try to detect language from class
+                    const langClass = code?.className || node.className || '';
+                    const langMatch = langClass.match(/language-(\w+)/);
+                    const lang = langMatch ? langMatch[1] : '';
+                    return `\`\`\`${lang}\n${codeText}\n\`\`\`\n\n`;
+                case 'p':
+                    return `${children}\n\n`;
+                case 'br':
+                    return '\n';
+                case 'hr':
+                    return '---\n\n';
+                case 'ul':
+                    return `${children}\n`;
+                case 'ol':
+                    return `${children}\n`;
+                case 'li':
+                    const parent = node.parentElement;
+                    const isInOl = parent && parent.tagName.toLowerCase() === 'ol';
+                    if (isInOl) {
+                        return `${children}\n`;
+                    } else {
+                        return `- ${children}\n`;
+                    }
+                case 'a':
+                    const href = node.getAttribute('href') || '';
+                    return `[${children}](${href})`;
+                case 'blockquote':
+                    return `> ${children}\n\n`;
+                case 'table':
+                case 'thead':
+                case 'tbody':
+                case 'tr':
+                case 'th':
+                case 'td':
+                    return children;
+                default:
+                    return children;
+            }
+        }
+
+        Array.from(temp.childNodes).forEach(node => {
+            markdown += processNode(node);
+        });
+
+        // Clean up extra newlines
+        markdown = markdown.replace(/\n{3,}/g, '\n\n').trim();
+
+        return markdown;
     }
 
     // Utility functions
