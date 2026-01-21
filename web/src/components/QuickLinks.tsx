@@ -1,16 +1,21 @@
 import { useState } from 'react'
 import { AiLogo } from './AiLogo'
 import { AI_GROUPS, AI_URLS, AI_DISPLAY_NAMES, AI_BRAND_COLORS } from '../lib/constants'
-import type { AiType, AiStatuses } from '../lib/types'
+import type { AiType, AiStatuses, AiTabCounts } from '../lib/types'
 
 interface QuickLinksProps {
   statuses: AiStatuses
+  tabCounts: AiTabCounts
 }
 
-export function QuickLinks({ statuses }: QuickLinksProps) {
+export function QuickLinks({ statuses, tabCounts }: QuickLinksProps) {
   const [copiedAi, setCopiedAi] = useState<string | null>(null)
 
   const handleOpen = (ai: string, e: React.MouseEvent) => {
+    if (statuses[ai as AiType]) {
+      e.preventDefault()
+      return
+    }
     if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) {
       return
     }
@@ -47,10 +52,10 @@ export function QuickLinks({ statuses }: QuickLinksProps) {
               key={ai}
               aiType={ai}
               connected={statuses[ai]}
+              tabCount={tabCounts[ai]}
               onOpen={(e) => handleOpen(ai, e)}
               onCopy={(e) => handleCopy(ai, e)}
               copied={copiedAi === ai}
-              url={AI_URLS[ai]}
             />
           ))}
         </div>
@@ -66,10 +71,10 @@ export function QuickLinks({ statuses }: QuickLinksProps) {
               key={ai}
               aiType={ai}
               connected={statuses[ai]}
+              tabCount={tabCounts[ai]}
               onOpen={(e) => handleOpen(ai, e)}
               onCopy={(e) => handleCopy(ai, e)}
               copied={copiedAi === ai}
-              url={AI_URLS[ai]}
             />
           ))}
         </div>
@@ -81,27 +86,30 @@ export function QuickLinks({ statuses }: QuickLinksProps) {
 interface QuickLinkItemProps {
   aiType: AiType
   connected: boolean
+  tabCount: number
   onOpen: (e: React.MouseEvent) => void
   onCopy: (e: React.MouseEvent) => void
   copied: boolean
-  url: string
 }
 
-function QuickLinkItem({ aiType, connected, onOpen, onCopy, copied, url }: QuickLinkItemProps) {
+function QuickLinkItem({ aiType, connected, tabCount, onOpen, onCopy, copied }: QuickLinkItemProps) {
   const brandColor = AI_BRAND_COLORS[aiType]
   const displayName = AI_DISPLAY_NAMES[aiType] || aiType
+  const disabled = connected
 
   return (
-    <a
-      href={url}
-      onClick={onOpen}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group w-full flex items-center gap-2 px-2 py-2 rounded-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+    <div
+      onClick={disabled ? undefined : onOpen}
+      className={`group w-full flex items-center gap-2 px-2 py-2 rounded-md transition-all ${
+        disabled
+          ? 'cursor-not-allowed opacity-60'
+          : 'cursor-pointer hover:scale-[1.02] active:scale-[0.98]'
+      }`}
       style={{
         backgroundColor: `${brandColor}10`,
         border: `1px solid ${brandColor}25`,
       }}
+      title={disabled ? '已连接，无需再打开' : `打开 ${displayName}`}
     >
       <AiLogo aiType={aiType} size={18} />
       <span
@@ -111,7 +119,10 @@ function QuickLinkItem({ aiType, connected, onOpen, onCopy, copied, url }: Quick
         {displayName}
       </span>
       {connected && (
-        <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+        <span className="text-[10px] text-green-600 font-medium">已连接</span>
+      )}
+      {tabCount > 1 && (
+        <span className="text-[10px] text-amber-600 font-medium">{tabCount}个</span>
       )}
       <button
         onClick={onCopy}
@@ -128,14 +139,16 @@ function QuickLinkItem({ aiType, connected, onOpen, onCopy, copied, url }: Quick
           </svg>
         )}
       </button>
-      <svg
-        className="w-3.5 h-3.5 text-slate-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-      </svg>
-    </a>
+      {!disabled && (
+        <svg
+          className="w-3.5 h-3.5 text-slate-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+      )}
+    </div>
   )
 }

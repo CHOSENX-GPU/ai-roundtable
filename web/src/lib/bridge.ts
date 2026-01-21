@@ -23,7 +23,20 @@ class ExtensionBridge {
   constructor() {
     this.extensionId = localStorage.getItem(EXTENSION_ID_KEY)
     this.token = localStorage.getItem(PAIRING_TOKEN_KEY)
+
+    this.autoDetectExtensionId()
+
     console.log('[Bridge] Initialized', { extensionId: this.extensionId, hasToken: !!this.token })
+  }
+
+  private autoDetectExtensionId() {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
+      const detectedId = chrome.runtime.id
+      if (detectedId && this.extensionId !== detectedId) {
+        console.log('[Bridge] Auto-detected Extension ID:', detectedId)
+        this.setExtensionId(detectedId)
+      }
+    }
   }
 
   setCallbacks(callbacks: BridgeCallbacks) {
@@ -35,11 +48,50 @@ class ExtensionBridge {
   }
 
   get isPaired(): boolean {
-    return this.token !== null
+    return this.isInternalApp || this.token !== null
   }
 
   get currentPairingCode(): string | null {
     return null
+  }
+
+  get isInternalApp(): boolean {
+    return window.location.protocol === 'chrome-extension:'
+  }
+
+  async ping(): Promise<boolean> {
+    const port = this.port
+    if (!port) {
+      return false
+    }
+
+    try {
+      const id = crypto.randomUUID()
+      return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          resolve(false)
+        }, 1000)
+
+        const oneTimeListener = (msg: BridgeMessage) => {
+          if (msg.kind === 'RES' && (msg as any).id === id) {
+            clearTimeout(timeout)
+            port.onMessage.removeListener(oneTimeListener)
+            resolve(true)
+          }
+        }
+
+        port.onMessage.addListener(oneTimeListener)
+        port.postMessage({
+          kind: 'REQ',
+          id,
+          type: 'GET_STATUS',
+          token: this.token
+        })
+      })
+    } catch (err) {
+      console.error('[Bridge] Ping error:', err)
+      return false
+    }
   }
 
   setExtensionId(id: string) {
@@ -49,15 +101,16 @@ class ExtensionBridge {
   }
 
   async connect(): Promise<boolean> {
-    if (!this.extensionId) {
-      console.error('[Bridge] No Extension ID')
-      this.callbacks.onError?.('请先设置 Extension ID')
-      return false
-    }
-
     if (typeof chrome === 'undefined' || !chrome.runtime) {
       console.error('[Bridge] Chrome runtime not available')
       this.callbacks.onError?.('请在 Chrome 浏览器中使用，并确保页面运行在 localhost')
+      return false
+    }
+
+    // For internal pages, we don't need extension ID
+    if (!this.isInternalApp && !this.extensionId) {
+      console.error('[Bridge] No Extension ID')
+      this.callbacks.onError?.('请先设置 Extension ID')
       return false
     }
 
@@ -69,18 +122,26 @@ class ExtensionBridge {
 
     return new Promise((resolve) => {
       try {
-        console.log('[Bridge] Connecting to extension:', this.extensionId)
-        this.port = chrome.runtime.connect(this.extensionId!, { name: 'ai-roundtable-web' })
+        // Internal pages use chrome.runtime.connect() without specifying extension ID
+        // External pages (localhost) use chrome.runtime.connect(extensionId)
+        if (this.isInternalApp) {
+          console.log('[Bridge] Connecting as internal extension page')
+          this.port = chrome.runtime.connect({ name: 'ai-roundtable-web-internal' })
+        } else {
+          console.log('[Bridge] Connecting to extension:', this.extensionId)
+          this.port = chrome.runtime.connect(this.extensionId!, { name: 'ai-roundtable-web' })
+        }
 
         let resolved = false
 
         this.port.onMessage.addListener((msg: BridgeMessage) => {
           console.log('[Bridge] Received message:', msg)
-          // First message indicates connection is working
-          if (!resolved) {
+
+          if (msg.kind === 'RES' && !resolved) {
             resolved = true
             console.log('[Bridge] Connection verified via message')
           }
+
           this.handleMessage(msg)
         })
 
@@ -103,19 +164,59 @@ class ExtensionBridge {
 
         // Give time for onDisconnect to fire if extension doesn't exist
         // Chrome fires onDisconnect synchronously if extension ID is invalid
-        setTimeout(() => {
+        setTimeout(async () => {
           if (!resolved && this.port) {
             resolved = true
             console.log('[Bridge] Port created successfully (no immediate disconnect)')
+
+            // Verify connection is actually working before auto-pair
+            const pingSuccess = await this.ping()
+            if (!pingSuccess) {
+              console.error('[Bridge] Port ping failed')
+              resolve(false)
+              return
+            }
+
+            console.log('[Bridge] Port ping successful')
+
+            // Auto-pair if running inside extension and not yet paired
+            if (this.isInternalApp && !this.token) {
+              console.log('[Bridge] Running inside extension, attempting auto-pair...')
+              const paired = await this.autoPair()
+              if (!paired) {
+                console.error('[Bridge] Auto-pair failed, user can still pair manually')
+              }
+            }
+
             resolve(true)
           }
-        }, 100)
+        }, 200)
       } catch (err) {
         console.error('[Bridge] Connect error:', err)
         this.callbacks.onError?.(`连接失败: ${err instanceof Error ? err.message : String(err)}`)
         resolve(false)
       }
     })
+  }
+
+  private async autoPair(): Promise<boolean> {
+    if (!this.port) {
+      return false
+    }
+
+    try {
+      const result = await this.sendRequest<{ token: string }>('AUTO_PAIR')
+      if (result.token) {
+        this.token = result.token
+        localStorage.setItem(PAIRING_TOKEN_KEY, result.token)
+        console.log('[Bridge] Auto-pair successful')
+        return true
+      }
+      return false
+    } catch (err) {
+      console.error('[Bridge] Auto-pair error:', err)
+      return false
+    }
   }
 
   disconnect() {
@@ -228,9 +329,14 @@ class ExtensionBridge {
     return result.content
   }
 
-  async getStatus(): Promise<Record<AiType, boolean>> {
-    const result = await this.sendRequest<{ statuses: Record<AiType, boolean> }>('GET_STATUS')
-    return result.statuses || AI_TYPES.reduce((acc, ai) => ({ ...acc, [ai]: false }), {} as Record<AiType, boolean>)
+  async getStatus(): Promise<{ statuses: Record<AiType, boolean>; tabCounts: Record<AiType, number> }> {
+    const result = await this.sendRequest<{ statuses: Record<AiType, boolean>; tabCounts: Record<AiType, number> }>('GET_STATUS')
+    const defaultStatuses = AI_TYPES.reduce((acc, ai) => ({ ...acc, [ai]: false }), {} as Record<AiType, boolean>)
+    const defaultTabCounts = AI_TYPES.reduce((acc, ai) => ({ ...acc, [ai]: 0 }), {} as Record<AiType, number>)
+    return {
+      statuses: result.statuses || defaultStatuses,
+      tabCounts: result.tabCounts || defaultTabCounts
+    }
   }
 
   async newConversation(aiTypes: AiType[]): Promise<Record<AiType, { success: boolean; error?: string }>> {

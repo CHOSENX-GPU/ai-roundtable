@@ -1,4 +1,4 @@
-# AI 圆桌 (AI Roundtable)
+# AI 圆桌 (AI Roundtable) v1.0.2
 
 ![GitHub Repo stars](https://img.shields.io/github/stars/CHOSENX-GPU/ai-roundtable?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/CHOSENX-GPU/ai-roundtable?style=social)
@@ -6,51 +6,49 @@
 
 > **Forked from [axtonliu/ai-roundtable](https://github.com/axtonliu/ai-roundtable) with enhancements**
 
-让多个 AI 助手围桌讨论，交叉评价，深度协作
+让多个 AI 助手围桌讨论，交叉评价，深度协作。通过 Chrome 扩展统一控制 Claude、ChatGPT、Gemini、DeepSeek、Kimi、豆包、ChatGLM 等 AI 平台。
 
-**v1.0.1 更新内容：**
-- 🐛 修复对话中断问题：优化 content script 健康检查、增加超时时间、改进心跳机制
-- 🐛 修复 `isCapturing` 标志卡死问题（5分钟超时自动恢复）
-- 🐛 修复消息发送超时（10s → 30s）
-- 🔧 减少心跳频率（10s → 30s，仅检查活动标签页）
-- 🔧 改进消息捕获逻辑（Markdown 渲染、表格、列表、代码块）
-- 🎨 添加 CHOSENX 品牌标识
-- 🔧 移除 Qwen 和文心一言支持（保留 7 个 AI）
-- 🔧 优化插件与 Web App 配对体验
+## v1.0.2 更新内容
 
-**原项目特性保留：**
+### 新功能
+- **一键打开控制台**：侧边栏新增「打开控制台」按钮，点击即可在扩展内部打开 Web App，无需配对
+- **多标签页检测**：当同一 AI 打开多个标签页时，显示警告提示，避免消息发送异常
+- **智能快速打开**：已连接的 AI 自动禁用打开按钮，防止重复打开
 
-**Developer Preview** - 这是开发者抢先版，功能可能变化，不保证向后兼容。
+### 技术改进
+- 扩展内部 Web App 自动连接，跳过配对流程
+- 内部页面使用 `chrome.runtime.connect()` 原生通信
+- 新增 `tabCounts` 状态追踪每个 AI 的标签页数量
 
-**本地运行，数据不离开你的浏览器** - 无需 API Key，直接操作 AI 网页界面。
+## 快速开始
 
-**欢迎反馈** - 接受 Issue 和 PR；不承诺长期支持和兼容性。
+### 方式一：扩展内置控制台（推荐）
 
----
+1. 安装扩展（从 Release 下载或开发者模式加载）
+2. 打开你需要的 AI 平台并登录
+3. 点击扩展图标打开侧边栏
+4. 点击「打开控制台」按钮
+5. 开始使用！
 
-一个 Chrome 扩展，让你像"会议主持人"一样，同时操控多个 AI（Claude、ChatGPT、Gemini、DeepSeek、Kimi、豆包、ChatGLM），实现真正的 AI 圆桌会议。
+### 方式二：独立 Web App
 
-<!-- TODO: 添加 GIF 演示 -->
-<!-- ![Demo GIF](assets/demo.gif) -->
-
-## 📚 文档导航
-
-| 文档 | 说明 |
-|------|------|
-| [🚀 快速开始](QUICK_START.md) | 5 分钟上手指南，快速体验 AI 圆桌 |
-| [📦 安装指南](INSTALLATION.md) | 详细安装步骤和故障排除 |
-| [🧪 测试指南](TESTING.md) | 功能测试和验证说明 |
+1. 安装扩展
+2. 打开 AI 平台并登录
+3. 运行 Web App：`cd web && npm run dev`
+4. 输入 Extension ID 和 6 位配对码完成配对
+5. 开始使用
 
 ## 核心特性
 
-- **统一控制台** - 通过 Chrome 侧边栏同时管理 7 个 AI（3 个国际 + 4 个中国）
-- **多目标发送** - 一条消息同时发给多个 AI，对比回答
-- **互评模式** - 让所有 AI 互相评价，对等参与（/mutual 命令）
-- **交叉引用** - 让 Claude 评价 ChatGPT 的回答，或反过来
-- **Discussion Mode** - 两个 AI 就同一主题进行多轮深度讨论
-- **无需 API** - 直接操作网页界面，使用你现有的 AI 订阅
-- **一键新对话** - 快速为选中的 AI 开启新对话
-- **智能重连** - 自动检测并恢复失效的连接
+| 功能 | 说明 |
+|------|------|
+| 多目标发送 | 一条消息同时发给多个 AI，对比回答 |
+| /mutual 互评 | 让所有选中的 AI 互相评价对方的回复 |
+| /cross 交叉引用 | 让指定 AI 评价另一个 AI 的回复 |
+| Discussion Mode | 两个 AI 就同一主题进行多轮深度讨论 |
+| 一键新对话 | 快速为选中的 AI 开启新对话 |
+| 多标签页警告 | 检测到同一 AI 多个标签页时提醒用户 |
+| 智能快速打开 | 已连接的 AI 不可重复打开 |
 
 ## 支持的 AI 平台
 
@@ -64,235 +62,92 @@
 | 豆包 | 字节跳动 | https://www.doubao.com/chat/ |
 | ChatGLM | 智谱清言 | https://chatglm.cn |
 
-## 安装
-
-### 快速安装（推荐）
-
-**方式一：从 Release 下载**
-
-1. 前往 [Releases 页面](https://github.com/CHOSENX-GPU/ai-roundtable/releases)
-2. 下载最新版本的 `ai-roundtable-vX.X.X.zip`
-3. 解压到任意文件夹
-4. 打开 Chrome，进入 `chrome://extensions/`
-5. 开启右上角「开发者模式」
-6. 点击「加载已解压的扩展程序」
-7. 选择解压后的文件夹
-
-**方式二：开发者模式安装**
-
-1. 下载或克隆本仓库
-2. 打开 Chrome，进入 `chrome://extensions/`
-3. 开启右上角「开发者模式」
-4. 点击「加载已解压的扩展程序」
-5. 选择本项目文件夹
-
-详细安装说明请查看 [INSTALLATION.md](https://github.com/CHOSENX-GPU/ai-roundtable/blob/master/INSTALLATION.md)
-
-## 使用方法
-
-### 准备工作
-
-1. 打开 Chrome，登录以下 AI 平台（根据需要）：
-   - [Claude](https://claude.ai)
-   - [ChatGPT](https://chatgpt.com)
-   - [Gemini](https://gemini.google.com)
-   - [DeepSeek](https://chat.deepseek.com)
-   - [Kimi](https://kimi.com)
-   - [豆包](https://www.doubao.com/chat/)
-   - [智谱清言](https://chatglm.cn)
-
-2. 推荐使用 Chrome 的 Split Tab 功能，将多个 AI 页面并排显示
-
-3. 点击扩展图标，打开侧边栏控制台
-
-### Normal Mode（普通模式）
-
-**基本发送**
-1. 勾选要发送的目标 AI（支持多选）
-2. 输入消息
-3. 按 Enter 或点击「发送」按钮
-
-**新对话功能**
-- 勾选想要开启新对话的 AI
-- 点击「新对话」按钮
-- 所有选中的 AI 会自动导航到新对话页面
-
-**@ 提及语法**
-- 点击 @ 按钮快速插入 AI 名称
-- 或手动输入：`@Claude 你怎么看这个问题？`
-
-**互评（推荐）**
-
-基于当前已有的回复，让所有选中的 AI 互相评价：
-```
-/mutual
-/mutual 重点分析优缺点
-```
-
-用法：
-1. 先发送一个问题给多个 AI，等待它们各自回复
-2. 点击 `/mutual` 按钮或输入 `/mutual`
-3. 每个 AI 都会收到其他 AI 的回复并进行评价
-   - 2 AI：A 评价 B，B 评价 A
-   - 3 AI：A 评价 BC，B 评价 AC，C 评价 AB
-
-**交叉引用（单向）**
-
-两个 AI（自动检测）：
-```
-@Claude 评价一下 @ChatGPT
-```
-最后 @ 的是来源（被评价），前面的是目标（评价者）
-
-三个 AI（使用 /cross 命令）：
-```
-/cross @Claude @Gemini <- @ChatGPT 评价一下
-/cross @ChatGPT <- @Claude @Gemini 对比一下
-```
-
-**动作下拉菜单**：快速插入预设动作词（评价/借鉴/批评/补充/对比）
-
-### Discussion Mode（讨论模式）
-
-让两个 AI 就同一主题进行深度辩论：
-
-1. 点击顶部「讨论」切换到讨论模式
-2. 选择 2 个参与讨论的 AI
-3. 输入讨论主题
-4. 点击「开始讨论」
-
-**讨论流程**
-
-```
-Round 1: 两个 AI 各自阐述观点
-Round 2: 互相评价对方的观点
-Round 3: 回应对方的评价，深化讨论
-...
-Summary: 生成讨论总结
-```
-
-## UI 设计特色
-
-本版本采用 **Apple Dark Mode 风格**，主要特点：
-
-- **玻璃拟态**：半透明背景 + 模糊效果
-- **霓虹品牌色**：每个 AI 都有独特的品牌发光色
-- **流畅动画**：悬停效果、状态转换动画
-- **清晰层级**：信息架构清晰，重点突出
-- **自适应滚动**：活动日志固定高度，内容自动滚动
-
-## 技术架构
+## 项目结构
 
 ```
 ai-roundtable/
-├── manifest.json           # Chrome 扩展配置 (Manifest V3)
-├── background.js           # Service Worker 消息中转
-├── sidepanel/
-│   ├── panel.html         # 侧边栏 UI
-│   ├── panel.css          # Apple Dark Mode 风格样式
-│   └── panel.js           # 控制逻辑
-├── content/
-│   ├── claude.js          # Claude 页面注入脚本
-│   ├── chatgpt.js         # ChatGPT 页面注入脚本
-│   ├── gemini.js          # Gemini 页面注入脚本
-│   ├── deepseek.js        # DeepSeek 页面注入脚本
-│   ├── qwen.js            # Qwen 页面注入脚本
-│   ├── kimi.js            # Kimi 页面注入脚本
-│   ├── doubao.js          # 豆包页面注入脚本
-│   └── chatglm.js         # ChatGLM 页面注入脚本
-└── icons/                  # 扩展图标
+├── ai-roundtable-v1.0.1/   # Chrome 扩展
+│   ├── manifest.json       # 扩展配置
+│   ├── background.js       # Service Worker
+│   ├── sidepanel/          # 侧边栏 UI
+│   ├── content/            # 各 AI 平台注入脚本
+│   └── web/                # 内置 Web App (构建产物)
+├── web/                    # Web App 源码 (React + Vite + Tailwind)
+│   ├── src/
+│   │   ├── components/     # UI 组件
+│   │   ├── hooks/          # React Hooks
+│   │   └── lib/            # 工具库
+│   └── package.json
+├── README.md
+├── CLAUDE.md               # 开发规范
+└── LICENSE
 ```
 
-## 版本历史
+## 架构
 
-### v1.0.1 (2025-01-22)
+```
+┌─────────────────────────────────────────────────────────┐
+│                      Web App                            │
+│  (chrome-extension://[ID]/web/index.html 或 localhost)  │
+└─────────────────────┬───────────────────────────────────┘
+                      │ chrome.runtime.connect()
+┌─────────────────────▼───────────────────────────────────┐
+│                Chrome Extension                         │
+│                  (background.js)                        │
+└─────────────────────┬───────────────────────────────────┘
+                      │ chrome.tabs.sendMessage()
+┌─────────────────────▼───────────────────────────────────┐
+│              Content Scripts                            │
+│  (claude.js, chatgpt.js, gemini.js, ...)               │
+└─────────────────────┬───────────────────────────────────┘
+                      │ DOM 操作
+┌─────────────────────▼───────────────────────────────────┐
+│                AI 网站                                  │
+│  (claude.ai, chatgpt.com, gemini.google.com, ...)      │
+└─────────────────────────────────────────────────────────┘
+```
 
-**Bug 修复**:
-- 🐛 修复对话中断问题：优化 content script 健康检查、增加超时时间、改进心跳机制
-- 🐛 修复 `isCapturing` 标志卡死问题（5分钟超时自动恢复）
-- 🐛 修复消息发送超时（10s → 30s）
+## 开发
 
-**优化改进**:
-- 🔧 减少心跳频率（10s → 30s，仅检查活动标签页）
-- 🔧 改进消息捕获逻辑（Markdown 渲染、表格、列表、代码块）
-- 🔧 添加 CHOSENX 品牌标识
-- 🔧 移除 Qwen 和文心一言支持（保留 7 个 AI）
+```bash
+# 安装依赖
+cd web && npm install
 
-### v0.1.6 (2025-01-21)
+# 开发模式
+npm run dev
 
-**新增功能**:
-- ✨ 新增 5 个中国 AI 平台支持
-- 🎨 全新 Apple Dark Mode UI 设计
-- 🆕 一键开启新对话功能
-
-**Bug 修复**:
-- ✅ 修复长时间不操作后连接超时问题
-- ✅ 修复豆包回复重复捕获问题
-- ✅ 修复 AI 评价时容易中断的问题
-- ✅ 修复豆包对话后无法连接的问题
-
-**优化改进**:
-- 🔧 心跳机制从 30 秒缩短到 10 秒
-- 🔧 增强消息重试机制（4 次重试 + 指数退避）
-- 🔧 长消息自动截断（>3000 字符）
-- 🔧 消息发送延迟防限流（400-500ms）
-- 🔧 内容 hash 去重机制
-
-### v0.1.5 - v0.1.1 (原版本)
-
-详见原项目 [axtonliu/ai-roundtable](https://github.com/axtonliu/ai-roundtable)。
+# 构建（输出到 ../ai-roundtable-v1.0.1/web/）
+npm run build
+```
 
 ## 隐私说明
 
-- **不上传任何内容** - 扩展完全在本地运行，不向任何服务器发送数据
-- **无遥测/日志采集** - 不收集使用数据、不追踪行为
-- **数据存储位置** - 仅使用浏览器本地存储（chrome.storage.session）
-- **无第三方服务** - 不依赖任何外部 API 或服务
-- **如何删除数据** - 卸载扩展即可完全清除，或在 Chrome 扩展设置中清除存储
-
-## 截图
-
-<!-- TODO: 添加截图 -->
-<!--
-| 主界面 | 讨论模式 |
-|-------|---------|
-| ![](assets/screenshot-1.png) | ![](assets/screenshot-2.png)
-
-| Apple Dark Mode UI | 新对话功能 |
-|------------------|-----------|
-| ![](assets/screenshot-3.png) | ![](assets/screenshot-4.png) |
--->
+- 扩展完全在本地运行，不上传任何数据
+- 不收集使用数据，不依赖第三方服务
+- 无需 API Key，直接操作 AI 网页界面
+- 卸载扩展即可清除本地存储
 
 ## 常见问题
 
-### Q: 安装后无法连接 AI 页面？
-**A:** 安装或更新扩展后，需要刷新已打开的 AI 页面。
+### Q: 点击「打开控制台」后页面空白？
+**A:** 请确保已构建 Web App：`cd web && npm run build`
 
-### Q: 交叉引用时提示"无法获取回复"？
-**A:** 确保源 AI 已经有回复。系统会获取该 AI 的最新一条回复。
+### Q: 状态显示未连接？
+**A:** 刷新 AI 页面，确保已登录且页面完全加载。
 
-### Q: AI 回复很长时会超时吗？
-**A:** 不会。系统支持最长 10 分钟的回复捕获。
+### Q: 同一个 AI 打开了多个标签页怎么办？
+**A:** 关闭多余的标签页，只保留一个，否则消息可能发送到错误的标签页。
 
-### Q: 为什么有时会显示 "Receiving end does not exist"？
-**A:** 这通常发生在长时间不操作后。扩展会自动重载 content script 来恢复连接。如果问题持续，请手动刷新 AI 页面。
+### Q: 外部 Web App 无法连接？
+**A:** 确保在 Chrome 中打开，并正确输入 Extension ID 和配对码。
 
-### Q: 豆包的回复会被捕获多次吗？
-**A:** 不会。v0.1.6 已添加内容 hash 去重和 3 秒冷却期，确保每条回复只捕获一次。
+## 版本历史
 
-### Q: 评价功能支持多长的消息？
-**A:** 自动截断超过 3000 字符的回复，并添加 "[内容已截断...]" 标记，防止消息过长导致发送失败。
-
-## 已知限制
-
-- 依赖各 AI 平台的 DOM 结构，平台更新可能导致功能失效
-- Discussion Mode 固定 2 个参与者
-- 不支持 Claude Artifacts、ChatGPT Canvas 等特殊功能
-- 某些 AI 平台（如 Qwen）长消息响应时间可能较长（30-60 秒）
-
-## 致谢
-
-本项目基于 [axtonliu/ai-roundtable](https://github.com/axtonliu/ai-roundtable) 进行开发，感谢原作者 Axton Liu 的杰出工作。
+| 版本 | 日期 | 更新内容 |
+|------|------|----------|
+| v1.0.2 | 2025-01-22 | 一键打开控制台、多标签页检测、智能快速打开 |
+| v1.0.1 | 2025-01-21 | Web App 架构、配对机制、实时状态同步 |
+| v1.0.0 | 2025-01-20 | 初始版本，支持 7 个 AI 平台 |
 
 ## 许可证
 

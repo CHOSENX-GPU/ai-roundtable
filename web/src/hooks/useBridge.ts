@@ -22,12 +22,18 @@ export function useBridge(options: UseBridgeOptions = {}) {
       onError: (error) => {
         options.onError?.(error)
         setIsConnected(false)
-        // 检测配对失效，更新状态以触发重新配对
         if (error.includes('配对已失效') || error.includes('Unauthorized')) {
           setIsPaired(false)
         }
       },
     })
+
+    if (bridge.isInternalApp && !bridge.isConnected) {
+      bridge.connect().then(success => {
+        setIsConnected(success)
+        setIsPaired(bridge.isPaired)
+      })
+    }
   }, [options])
 
   const connect = useCallback(async (extensionId?: string) => {

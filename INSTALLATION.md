@@ -1,105 +1,95 @@
 # 安装说明
 
-## 方法一：从 ZIP 文件安装（推荐）
+AI 圆桌由两个部分组成：Chrome 扩展（负责操控 AI 网页）+ Web App（操作界面）。
 
-### Windows 用户
-1. 下载 `ai-roundtable-v0.1.6.zip`
-2. 解压到任意文件夹（例如：`D:\ai-roundtable-v0.1.6\`）
-3. 打开 Chrome 浏览器，访问 `chrome://extensions/`
-4. 开启右上角的「开发者模式」
-5. 点击「加载已解压的扩展程序」
-6. 选择解压后的文件夹
-7. 完成安装！
+## 1. 安装 Chrome 扩展
 
-### Mac/Linux 用户
-1. 下载 `ai-roundtable-v0.1.6.zip`
-2. 解压：
-   ```bash
-   unzip ai-roundtable-v0.1.6.zip
-   ```
-3. 打开 Chrome 浏览器，访问 `chrome://extensions/`
-4. 开启右上角的「开发者模式」
-5. 点击「加载已解压的扩展程序」
-6. 选择解压后的文件夹
-7. 完成安装！
+### 方式一：Release 包安装（推荐）
 
-## 方法二：从源码安装
+1. 前往 [Releases 页面](https://github.com/CHOSENX-GPU/ai-roundtable/releases)
+2. 下载最新版本的 `ai-roundtable-vX.X.X.zip`
+3. 解压到任意文件夹
+4. 打开 Chrome，进入 `chrome://extensions/`
+5. 开启右上角「开发者模式」
+6. 点击「加载已解压的扩展程序」
+7. 选择解压后的文件夹
 
-1. 下载或克隆本仓库：
-   ```bash
-   git clone https://github.com/CHOSENX-GPU/ai-roundtable.git
-   cd ai-roundtable
-   ```
+### 方式二：开发者模式安装
 
-2. 打开 Chrome 浏览器，访问 `chrome://extensions/`
-
-3. 开启右上角的「开发者模式」
-
+1. 下载或克隆本仓库
+2. 打开 Chrome，进入 `chrome://extensions/`
+3. 开启右上角「开发者模式」
 4. 点击「加载已解压的扩展程序」
+5. 选择扩展文件夹
 
-5. 选择项目文件夹
+## 2. 运行 Web App
 
-6. 完成安装！
+### 本地运行（开发/自托管）
 
-## 安装后配置
+```bash
+cd web
+npm install
+npm run dev
+```
 
-### 1. 打开 AI 平台
-打开以下 AI 平台并登录（根据需要使用）：
+启动后打开控制台提示的地址（通常是 `http://localhost:5173`）。
+
+### 生产部署（可选）
+
+```bash
+cd web
+npm install
+npm run build
+```
+
+构建产物在 `web/dist/`，可部署到静态站点。若更换域名，请确保扩展允许该域名与其建立连接。
+
+## 3. 配对扩展与 Web App
+
+1. 打开 Chrome 扩展侧边栏，获取 6 位配对码
+2. 在 `chrome://extensions/` 中复制 Extension ID
+3. 在 Web App 的配对弹窗中输入 Extension ID 与配对码完成连接
+
+## 4. 安装后检查
+
+- 打开并登录要使用的 AI 平台
+- 刷新已打开的 AI 页面
+- Web App 中 AI 状态显示为已连接
+
+## 支持的 AI 平台
 
 - [Claude](https://claude.ai)
 - [ChatGPT](https://chatgpt.com)
 - [Gemini](https://gemini.google.com)
 - [DeepSeek](https://chat.deepseek.com)
-- [通义千问](https://tongyi.aliyun.com/qianwen/)
-- [Kimi](https://kimi.moonshot.cn)
+- [Kimi](https://kimi.com)
 - [豆包](https://www.doubao.com/chat/)
 - [智谱清言](https://chatglm.cn)
 
-### 2. 刷新 AI 页面
-**重要**：首次安装或更新扩展后，必须刷新所有已打开的 AI 页面！
-
-### 3. 打开扩展
-点击 Chrome 工具栏中的扩展图标，侧边栏将自动打开。
-
-### 4. 开始使用
-- 勾选要发送消息的 AI
-- 输入消息内容
-- 点击「发送」按钮
-
 ## 更新扩展
 
-当有新版本时：
-
-1. 下载新版本的 ZIP 文件
-2. 解压到新文件夹
-3. 在 `chrome://extensions/` 中找到旧版本
-4. 点击「移除」
-5. 点击「加载已解压的扩展程序」
-6. 选择新解压的文件夹
-7. 刷新所有 AI 页面
+1. 下载新版本的 ZIP 文件并解压
+2. 在 `chrome://extensions/` 中移除旧版本
+3. 加载新解压的扩展文件夹
+4. 刷新所有 AI 页面
 
 ## 常见问题
 
 ### Q: 为什么安装后无法连接 AI 页面？
-**A**: 请确保刷新了所有已打开的 AI 页面。
+**A:** 安装或更新扩展后，需要刷新所有已打开的 AI 页面。
 
 ### Q: 如何确认扩展已正确安装？
-**A**:
-1. 在 Chrome 工具栏中应该能看到扩展图标
-2. 访问 AI 页面后，侧边栏的 AI 勾选框应该显示为已连接（绿色）
-
-### Q: 可以打包成 .crx 文件吗？
-**A**: 不建议。Chrome 已不再推荐使用 .crx 文件，使用「加载已解压的扩展程序」是更安全的方式。
+**A:** 
+1. Chrome 工具栏能看到扩展图标
+2. Web App 中的 AI 状态显示为已连接
 
 ## 隐私说明
 
-- **本地运行**：扩展完全在本地运行，不向任何服务器发送数据
-- **无遥测**：不收集使用数据
-- **数据存储**：仅使用浏览器本地存储
-- **卸载清除**：卸载扩展即可完全清除数据
+- 扩展与 Web App 在本地运行，不向任何服务器发送数据
+- 不收集使用数据，不依赖第三方服务
+- 卸载扩展即可清除本地存储
 
 ## 需要帮助？
 
-如有问题，请访问：
 - [GitHub Issues](https://github.com/CHOSENX-GPU/ai-roundtable/issues)
-- [完整文档](https://github.com/CHOSENX-GPU/ai-roundtable/blob/master/README.md)
+- [完整文档](README.md)

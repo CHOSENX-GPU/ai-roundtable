@@ -150,7 +150,7 @@ export function InputBar({
               onClick={() => insertText(`@${AI_DISPLAY_NAMES[ai]}`)}
               className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium bg-white hover:bg-slate-100 text-slate-700 rounded border border-slate-200 transition-colors"
             >
-              @<img src={`/icons/${ai}-color.svg`} alt={ai} className="w-4 h-4 object-contain" />
+              @<img src={`./icons/${ai}-color.svg`} alt={ai} className="w-4 h-4 object-contain" />
               {AI_DISPLAY_NAMES[ai]}
             </button>
           ))}

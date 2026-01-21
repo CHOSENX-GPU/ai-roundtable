@@ -90,8 +90,25 @@ chrome.runtime.onConnectExternal.addListener((port) => {
   });
 });
 
-async function handleExternalMessage(port, msg) {
-  console.log('[AI Panel] handleExternalMessage called with:', msg.kind, msg.type);
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'ai-roundtable-web-internal') {
+    console.log('[AI Panel] Internal web app connection');
+    externalPorts.add(port);
+
+    port.onMessage.addListener((msg) => {
+      console.log('[AI Panel] Internal message received:', JSON.stringify(msg));
+      handleExternalMessage(port, msg, true);
+    });
+
+    port.onDisconnect.addListener(() => {
+      console.log('[AI Panel] Internal port disconnected');
+      externalPorts.delete(port);
+    });
+  }
+});
+
+async function handleExternalMessage(port, msg, isInternal = false) {
+  console.log('[AI Panel] handleExternalMessage called with:', msg.kind, msg.type, 'isInternal:', isInternal);
 
   // 等待 pairingState 从 storage 加载完成
   if (!pairingStateLoaded) {
@@ -126,6 +143,28 @@ async function handleExternalMessage(port, msg) {
       id,
       ok: true,
       data: { code },
+    });
+    return;
+  }
+
+  if (type === 'AUTO_PAIR') {
+    console.log('[AI Panel] AUTO_PAIR - automatic pairing for internal web app');
+
+    const autoToken = generateToken();
+    pairingState = {
+      code: null,
+      token: autoToken,
+      codeExpiry: null,
+      tokenExpiry: Date.now() + 24 * 60 * 60 * 1000,
+    };
+    await savePairingState();
+
+    console.log('[AI Panel] AUTO_PAIR success, returning token');
+    port.postMessage({
+      kind: 'RES',
+      id,
+      ok: true,
+      data: { token: autoToken },
     });
     return;
   }
@@ -167,12 +206,12 @@ async function handleExternalMessage(port, msg) {
     return;
   }
 
-  if (!token || token !== pairingState.token) {
+  if (!isInternal && (!token || token !== pairingState.token)) {
     port.postMessage({ kind: 'RES', id, ok: false, error: 'Unauthorized' });
     return;
   }
 
-  if (pairingState.tokenExpiry && Date.now() > pairingState.tokenExpiry) {
+  if (!isInternal && pairingState.tokenExpiry && Date.now() > pairingState.tokenExpiry) {
     port.postMessage({ kind: 'RES', id, ok: false, error: 'Token expired' });
     return;
   }
@@ -203,10 +242,12 @@ async function handleExternalMessage(port, msg) {
 
 async function getAllStatuses() {
   const statuses = {};
+  const tabCounts = {};
   const tabs = await chrome.tabs.query({});
 
   for (const ai of AI_TYPES) {
     statuses[ai] = false;
+    tabCounts[ai] = 0;
   }
 
   for (const tab of tabs) {
@@ -214,11 +255,12 @@ async function getAllStatuses() {
       const aiType = getAITypeFromUrl(tab.url);
       if (aiType) {
         statuses[aiType] = true;
+        tabCounts[aiType] = (tabCounts[aiType] || 0) + 1;
       }
     }
   }
 
-  return { statuses };
+  return { statuses, tabCounts };
 }
 
 function notifyExternalPorts(type, data) {

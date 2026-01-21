@@ -21,6 +21,8 @@ export interface AiStatus {
 
 export type AiStatuses = Record<AiType, boolean>
 
+export type AiTabCounts = Record<AiType, number>
+
 export interface LogEntry {
   id: string
   timestamp: Date
@@ -31,7 +33,7 @@ export interface LogEntry {
 export interface BridgeRequest {
   kind: 'REQ'
   id: string
-  type: 'SEND_MESSAGE' | 'GET_RESPONSE' | 'GET_STATUS' | 'NEW_CONVERSATION' | 'GET_PAIR_CODE' | 'PAIR_CONFIRM'
+  type: 'SEND_MESSAGE' | 'GET_RESPONSE' | 'GET_STATUS' | 'NEW_CONVERSATION' | 'GET_PAIR_CODE' | 'PAIR_CONFIRM' | 'AUTO_PAIR'
   payload?: unknown
   token?: string
 }

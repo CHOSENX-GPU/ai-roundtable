@@ -7,6 +7,7 @@ const refreshCodeBtn = document.getElementById('refresh-code-btn');
 const extensionIdEl = document.getElementById('extension-id');
 const extensionIdContainer = document.getElementById('extension-id-container');
 const pairingCodeContainer = document.getElementById('pairing-code-container');
+const openDashboardBtn = document.getElementById('open-dashboard-btn');
 
 let currentPairingCode = null;
 let codeExpiryTime = null;
@@ -42,6 +43,7 @@ function displayExtensionId() {
 
 function setupEventListeners() {
   refreshCodeBtn.addEventListener('click', generateNewPairingCode);
+  openDashboardBtn.addEventListener('click', openDashboard);
 
   pairingCodeContainer.addEventListener('click', () => {
     if (currentPairingCode) {
@@ -70,6 +72,13 @@ function setupEventListeners() {
         log(`${message.aiType}: 发送失败 - ${message.error}`, 'error');
       }
     }
+  });
+}
+
+function openDashboard() {
+  const dashboardUrl = chrome.runtime.getURL('web/index.html');
+  chrome.tabs.create({ url: dashboardUrl }, (tab) => {
+    log('控制台已在新标签页打开', 'success');
   });
 }
 
