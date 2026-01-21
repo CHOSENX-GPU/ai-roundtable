@@ -1,4 +1,4 @@
-const AI_TYPES = ['claude', 'chatgpt', 'gemini', 'deepseek', 'qwen', 'kimi', 'doubao', 'chatglm', 'ernie'];
+const AI_TYPES = ['claude', 'chatgpt', 'gemini', 'deepseek', 'kimi', 'doubao', 'chatglm'];
 
 const logContainer = document.getElementById('log-container');
 const pairingCodeEl = document.getElementById('pairing-code');
@@ -98,11 +98,9 @@ function getAITypeFromUrl(url) {
   if (url.includes('chat.openai.com') || url.includes('chatgpt.com')) return 'chatgpt';
   if (url.includes('gemini.google.com')) return 'gemini';
   if (url.includes('chat.deepseek.com')) return 'deepseek';
-  if (url.includes('chat.qwen.ai') || url.includes('qianwen.com')) return 'qwen';
   if (url.includes('kimi.com')) return 'kimi';
   if (url.includes('doubao.com')) return 'doubao';
   if (url.includes('chatglm.cn')) return 'chatglm';
-  if (url.includes('ernie.baidu.com') || url.includes('yiyan.baidu.com')) return 'ernie';
   return null;
 }
 

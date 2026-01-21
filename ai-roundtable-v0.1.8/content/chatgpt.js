@@ -332,9 +332,7 @@
     const temp = document.createElement('div');
     temp.innerHTML = html;
 
-    let markdown = '';
-
-    function processNode(node) {
+    function processNode(node, context = { listDepth: 0, orderedIndex: 0 }) {
       if (node.nodeType === Node.TEXT_NODE) {
         return node.textContent;
       }
@@ -344,73 +342,171 @@
       }
 
       const tag = node.tagName.toLowerCase();
-      const children = Array.from(node.childNodes).map(processNode).join('');
 
       switch (tag) {
         case 'h1':
-          return `# ${children}\n\n`;
+          return `# ${getTextContent(node)}\n\n`;
         case 'h2':
-          return `## ${children}\n\n`;
+          return `## ${getTextContent(node)}\n\n`;
         case 'h3':
-          return `### ${children}\n\n`;
+          return `### ${getTextContent(node)}\n\n`;
         case 'h4':
-          return `#### ${children}\n\n`;
+          return `#### ${getTextContent(node)}\n\n`;
         case 'h5':
-          return `##### ${children}\n\n`;
+          return `##### ${getTextContent(node)}\n\n`;
         case 'h6':
-          return `###### ${children}\n\n`;
+          return `###### ${getTextContent(node)}\n\n`;
         case 'strong':
         case 'b':
-          return `**${children}**`;
+          return `**${processChildren(node, context)}**`;
         case 'em':
         case 'i':
-          return `*${children}*`;
+          return `*${processChildren(node, context)}*`;
         case 'code':
-          return `\`${children}\``;
-        case 'pre':
-          const code = node.querySelector('code');
-          const codeText = code ? code.textContent : node.textContent;
-          return `\`\`\`\n${codeText}\n\`\`\`\n\n`;
+          // Inline code (not inside pre)
+          if (node.parentElement?.tagName.toLowerCase() !== 'pre') {
+            return `\`${node.textContent}\``;
+          }
+          return node.textContent;
+        case 'pre': {
+          const codeEl = node.querySelector('code');
+          const codeText = codeEl ? codeEl.textContent : node.textContent;
+          // Extract language from class (e.g., language-javascript, hljs language-python)
+          let lang = '';
+          const langClass = (codeEl?.className || node.className || '').match(/language-(\w+)/);
+          if (langClass) lang = langClass[1];
+          return `\n\`\`\`${lang}\n${codeText.trim()}\n\`\`\`\n\n`;
+        }
         case 'p':
-          return `${children}\n\n`;
+          return `${processChildren(node, context)}\n\n`;
         case 'br':
           return '\n';
         case 'hr':
           return '---\n\n';
-        case 'ul':
-          return `${children}\n`;
-        case 'ol':
-          return `${children}\n`;
+        case 'ul': {
+          const items = Array.from(node.children)
+            .filter(c => c.tagName.toLowerCase() === 'li')
+            .map(li => processListItem(li, false, 0, context.listDepth))
+            .join('');
+          return items + '\n';
+        }
+        case 'ol': {
+          const items = Array.from(node.children)
+            .filter(c => c.tagName.toLowerCase() === 'li')
+            .map((li, idx) => processListItem(li, true, idx + 1, context.listDepth))
+            .join('');
+          return items + '\n';
+        }
         case 'li':
-          const parent = node.parentElement;
-          const isInOl = parent && parent.tagName.toLowerCase() === 'ol';
-          if (isInOl) {
-            return `${children}\n`;
-          } else {
-            return `- ${children}\n`;
-          }
-        case 'a':
+          // Handled by ul/ol
+          return processChildren(node, context);
+        case 'a': {
           const href = node.getAttribute('href') || '';
-          return `[${children}](${href})`;
-        case 'blockquote':
-          return `> ${children}\n\n`;
+          return `[${processChildren(node, context)}](${href})`;
+        }
+        case 'blockquote': {
+          const content = processChildren(node, context).trim().split('\n').map(line => `> ${line}`).join('\n');
+          return `${content}\n\n`;
+        }
         case 'table':
+          return processTable(node) + '\n';
         case 'thead':
         case 'tbody':
+        case 'tfoot':
+          return processChildren(node, context);
         case 'tr':
         case 'th':
         case 'td':
-          return children;
+          // Handled by processTable
+          return processChildren(node, context);
+        case 'div':
+        case 'span':
+        case 'section':
+        case 'article':
+          return processChildren(node, context);
         default:
-          return children;
+          return processChildren(node, context);
       }
     }
 
+    function processChildren(node, context) {
+      return Array.from(node.childNodes).map(child => processNode(child, context)).join('');
+    }
+
+    function getTextContent(node) {
+      return processChildren(node, { listDepth: 0, orderedIndex: 0 }).trim();
+    }
+
+    function processListItem(li, isOrdered, index, depth) {
+      const indent = '  '.repeat(depth);
+      const prefix = isOrdered ? `${index}. ` : '- ';
+      
+      // Process direct text content and nested elements
+      let content = '';
+      let hasNestedList = false;
+      
+      for (const child of li.childNodes) {
+        const tag = child.tagName?.toLowerCase();
+        if (tag === 'ul' || tag === 'ol') {
+          hasNestedList = true;
+          // Process nested list with increased depth
+          const nestedItems = Array.from(child.children)
+            .filter(c => c.tagName.toLowerCase() === 'li')
+            .map((nestedLi, idx) => processListItem(nestedLi, tag === 'ol', idx + 1, depth + 1))
+            .join('');
+          content += '\n' + nestedItems;
+        } else if (child.nodeType === Node.TEXT_NODE) {
+          content += child.textContent;
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          content += processNode(child, { listDepth: depth, orderedIndex: 0 });
+        }
+      }
+      
+      // Clean up content
+      content = content.trim().replace(/\n\n+/g, '\n');
+      
+      if (hasNestedList) {
+        const lines = content.split('\n');
+        const firstLine = lines[0];
+        const rest = lines.slice(1).join('\n');
+        return `${indent}${prefix}${firstLine}\n${rest}`;
+      }
+      
+      return `${indent}${prefix}${content}\n`;
+    }
+
+    function processTable(table) {
+      const rows = table.querySelectorAll('tr');
+      if (rows.length === 0) return '';
+
+      let result = '';
+      let isFirstRow = true;
+
+      for (const row of rows) {
+        const cells = row.querySelectorAll('th, td');
+        const cellContents = Array.from(cells).map(cell => 
+          processChildren(cell, { listDepth: 0, orderedIndex: 0 }).trim().replace(/\|/g, '\\|').replace(/\n/g, ' ')
+        );
+        
+        result += '| ' + cellContents.join(' | ') + ' |\n';
+        
+        // Add separator after header row
+        if (isFirstRow) {
+          result += '| ' + cellContents.map(() => '---').join(' | ') + ' |\n';
+          isFirstRow = false;
+        }
+      }
+
+      return result;
+    }
+
+    // Process all child nodes
+    let markdown = '';
     Array.from(temp.childNodes).forEach(node => {
-      markdown += processNode(node);
+      markdown += processNode(node, { listDepth: 0, orderedIndex: 0 });
     });
 
-    markdown = markdown.replace(/<li>/g, '').replace(/<\/li>/g, '');
+    // Clean up extra newlines
     markdown = markdown.replace(/\n{3,}/g, '\n\n').trim();
 
     return markdown;
