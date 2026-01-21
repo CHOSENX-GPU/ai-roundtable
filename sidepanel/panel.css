@@ -18,7 +18,7 @@
   /* AI Brand Colors - Updated */
   --doubao-color: #FFFFFF;      /* White */
   --qwen-color: #615CED;        /* Qwen Purple */
-  --gemini-color: #FFFFFF;      /* White */
+  --gemini-color: #9CA3AF;      /* Gray */
   --kimi-color: #000000;        /* Black */
   --chatglm-color: #4268FA;     /* ChatGLM Blue */
   --claude-color: #D97757;      /* Terracotta */
@@ -637,7 +637,7 @@ header .subtitle {
 .mention-btn.gemini {
   background: var(--gemini-color);
   border-color: var(--gemini-color);
-  color: var(--text-primary);
+  color: white;
 }
 
 .mention-btn.deepseek {
