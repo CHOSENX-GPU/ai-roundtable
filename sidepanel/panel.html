@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Panel</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>AI 圆桌</h1>
+      <p class="subtitle">Multi-AI Roundtable</p>
+    </header>
+
+    <!-- Mode Switcher & Help -->
+    <div class="header-controls">
+      <section class="mode-switcher">
+        <button class="mode-btn active" id="mode-normal">普通</button>
+        <button class="mode-btn" id="mode-discussion">讨论</button>
+      </section>
+
+      <!-- Help Dropdown -->
+      <div class="help-dropdown">
+        <button class="help-toggle" id="help-toggle">❓ 帮助</button>
+        <div class="help-menu" id="help-menu">
+          <p class="help-subtitle">互评 /mutual（推荐）</p>
+          <ul>
+            <li><code>/mutual</code><br><small>让所有选中的 AI 互评当前回复</small></li>
+            <li><code>/mutual 重点分析优缺点</code><br><small>可加自定义评价提示</small></li>
+          </ul>
+          <p class="help-subtitle">单向引用</p>
+          <ul>
+            <li><code>@Claude 评价一下 @ChatGPT</code></li>
+            <li><code>/cross @Claude @Gemini <- @ChatGPT</code></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Normal Mode Content -->
+    <div id="normal-mode">
+      <section class="targets">
+        <!-- 美国 AI -->
+        <div class="ai-group">
+          <div class="ai-group-label">🇺🇸 US</div>
+          <div class="ai-grid">
+            <label class="target-label compact" data-ai="claude" data-url="https://claude.ai">
+              <input type="checkbox" id="target-claude" checked>
+              <img src="../AI icon/claude-color.svg" class="ai-icon" alt="Claude">
+              <span class="target-name claude">Claude</span>
+              <span class="connection-dot" id="status-claude"></span>
+            </label>
+            <label class="target-label compact" data-ai="chatgpt" data-url="https://chat.openai.com">
+              <input type="checkbox" id="target-chatgpt" checked>
+              <img src="../AI icon/chatgpt-color.svg" class="ai-icon" alt="ChatGPT">
+              <span class="target-name chatgpt">ChatGPT</span>
+              <span class="connection-dot" id="status-chatgpt"></span>
+            </label>
+            <label class="target-label compact" data-ai="gemini" data-url="https://gemini.google.com">
+              <input type="checkbox" id="target-gemini" checked>
+              <img src="../AI icon/gemini-color.svg" class="ai-icon" alt="Gemini">
+              <span class="target-name gemini">Gemini</span>
+              <span class="connection-dot" id="status-gemini"></span>
+            </label>
+          </div>
+        </div>
+        <!-- 中国 AI -->
+        <div class="ai-group">
+          <div class="ai-group-label">🇨🇳 CN</div>
+          <div class="ai-grid">
+            <label class="target-label compact" data-ai="deepseek" data-url="https://chat.deepseek.com">
+              <input type="checkbox" id="target-deepseek">
+              <img src="../AI icon/deepseek-color.svg" class="ai-icon" alt="DeepSeek">
+              <span class="target-name deepseek">DeepSeek</span>
+              <span class="connection-dot" id="status-deepseek"></span>
+            </label>
+            <label class="target-label compact" data-ai="qwen" data-url="https://chat.qwen.ai">
+              <input type="checkbox" id="target-qwen">
+              <img src="../AI icon/qwen-color.svg" class="ai-icon" alt="Qwen">
+              <span class="target-name qwen">Qwen</span>
+              <span class="connection-dot" id="status-qwen"></span>
+            </label>
+            <label class="target-label compact" data-ai="kimi" data-url="https://kimi.moonshot.cn">
+              <input type="checkbox" id="target-kimi">
+              <img src="../AI icon/kimi-color.svg" class="ai-icon" alt="Kimi">
+              <span class="target-name kimi">Kimi</span>
+              <span class="connection-dot" id="status-kimi"></span>
+            </label>
+            <label class="target-label compact" data-ai="doubao" data-url="https://www.doubao.com/chat">
+              <input type="checkbox" id="target-doubao">
+              <img src="../AI icon/doubao-color.svg" class="ai-icon" alt="Doubao">
+              <span class="target-name doubao">Doubao</span>
+              <span class="connection-dot" id="status-doubao"></span>
+            </label>
+            <label class="target-label compact" data-ai="chatglm" data-url="https://chatglm.cn">
+              <input type="checkbox" id="target-chatglm">
+              <img src="../AI icon/chatglm-color.svg" class="ai-icon" alt="ChatGLM">
+              <span class="target-name chatglm">ChatGLM</span>
+              <span class="connection-dot" id="status-chatglm"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="input-section">
+        <div class="action-buttons">
+          <select id="action-select" class="action-select">
+            <option value="">插入动作...</option>
+            <option value="evaluate">评价</option>
+            <option value="learn">借鉴</option>
+            <option value="critique">批评</option>
+            <option value="supplement">补充</option>
+            <option value="compare">对比</option>
+          </select>
+          <button class="shortcut-btn" id="mutual-btn" data-insert="/mutual ">/mutual</button>
+          <button class="shortcut-btn" id="cross-btn" data-insert="/cross ">/cross</button>
+          <button class="shortcut-btn" id="arrow-btn" data-insert=" <- ">←</button>
+        </div>
+        <div class="mention-buttons">
+          <div class="mention-grid">
+            <button class="mention-btn claude" data-mention="@Claude" id="mention-claude">@Claude</button>
+            <button class="mention-btn chatgpt" data-mention="@ChatGPT" id="mention-chatgpt">@ChatGPT</button>
+            <button class="mention-btn gemini" data-mention="@Gemini" id="mention-gemini">@Gemini</button>
+            <button class="mention-btn deepseek" data-mention="@DeepSeek" id="mention-deepseek">@DeepSeek</button>
+            <button class="mention-btn qwen" data-mention="@Qwen" id="mention-qwen">@Qwen</button>
+            <button class="mention-btn kimi" data-mention="@Kimi" id="mention-kimi">@Kimi</button>
+            <button class="mention-btn doubao" data-mention="@Doubao" id="mention-doubao">@Doubao</button>
+            <button class="mention-btn chatglm" data-mention="@ChatGLM" id="mention-chatglm">@ChatGLM</button>
+          </div>
+        </div>
+        <textarea id="message-input" placeholder="输入消息...&#10;&#10;互评: /mutual（基于当前回复）&#10;单向: @Claude 评价一下 @ChatGPT"></textarea>
+        <div class="button-row">
+          <button id="new-chat-btn" class="new-chat-btn" type="button" title="为选中的 AI 开启新对话">
+            <span class="btn-icon">+</span>
+            <span>新对话</span>
+          </button>
+          <button id="send-btn">
+            <span class="btn-icon">➤</span>
+            <span>发送</span>
+          </button>
+        </div>
+      </section>
+    </div><!-- end normal-mode -->
+
+    <!-- Discussion Mode Content -->
+    <div id="discussion-mode" class="hidden">
+      <section class="discussion-setup" id="discussion-setup">
+        <h3>开始讨论</h3>
+
+        <!-- Discussion AI Selection - Same Layout as Normal Mode -->
+        <div class="ai-grid">
+          <label class="target-label compact" id="disc-target-claude" data-ai="claude" data-url="https://claude.ai">
+            <input type="checkbox" name="participant" value="claude" id="disc-participant-claude" checked>
+            <img src="../AI icon/claude-color.svg" class="ai-icon" alt="Claude">
+            <span class="target-name claude">Claude</span>
+            <span class="connection-dot" id="disc-status-claude"></span>
+          </label>
+          <label class="target-label compact" id="disc-target-chatgpt" data-ai="chatgpt" data-url="https://chat.openai.com">
+            <input type="checkbox" name="participant" value="chatgpt" id="disc-participant-chatgpt" checked>
+            <img src="../AI icon/chatgpt-color.svg" class="ai-icon" alt="ChatGPT">
+            <span class="target-name chatgpt">ChatGPT</span>
+            <span class="connection-dot" id="disc-status-chatgpt"></span>
+          </label>
+          <label class="target-label compact" id="disc-target-gemini" data-ai="gemini" data-url="https://gemini.google.com">
+            <input type="checkbox" name="participant" value="gemini" id="disc-participant-gemini">
+            <img src="../AI icon/gemini-color.svg" class="ai-icon" alt="Gemini">
+            <span class="target-name gemini">Gemini</span>
+            <span class="connection-dot" id="disc-status-gemini"></span>
+          </label>
+          <label class="target-label compact" id="disc-target-deepseek" data-ai="deepseek" data-url="https://chat.deepseek.com">
+            <input type="checkbox" name="participant" value="deepseek" id="disc-participant-deepseek">
+            <img src="../AI icon/deepseek-color.svg" class="ai-icon" alt="DeepSeek">
+            <span class="target-name deepseek">DeepSeek</span>
+            <span class="connection-dot" id="disc-status-deepseek"></span>
+          </label>
+          <label class="target-label compact" id="disc-target-qwen" data-ai="qwen" data-url="https://chat.qwen.ai">
+            <input type="checkbox" name="participant" value="qwen" id="disc-participant-qwen">
+            <img src="../AI icon/qwen-color.svg" class="ai-icon" alt="Qwen">
+            <span class="target-name qwen">Qwen</span>
+            <span class="connection-dot" id="disc-status-qwen"></span>
+          </label>
+          <label class="target-label compact" id="disc-target-kimi" data-ai="kimi" data-url="https://kimi.moonshot.cn">
+            <input type="checkbox" name="participant" value="kimi" id="disc-participant-kimi">
+            <img src="../AI icon/kimi-color.svg" class="ai-icon" alt="Kimi">
+            <span class="target-name kimi">Kimi</span>
+            <span class="connection-dot" id="disc-status-kimi"></span>
+          </label>
+          <label class="target-label compact" id="disc-target-doubao" data-ai="doubao" data-url="https://www.doubao.com/chat">
+            <input type="checkbox" name="participant" value="doubao" id="disc-participant-doubao">
+            <img src="../AI icon/doubao-color.svg" class="ai-icon" alt="Doubao">
+            <span class="target-name doubao">Doubao</span>
+            <span class="connection-dot" id="disc-status-doubao"></span>
+          </label>
+          <label class="target-label compact" id="disc-target-chatglm" data-ai="chatglm" data-url="https://chatglm.cn">
+            <input type="checkbox" name="participant" value="chatglm" id="disc-participant-chatglm">
+            <img src="../AI icon/chatglm-color.svg" class="ai-icon" alt="ChatGLM">
+            <span class="target-name chatglm">ChatGLM</span>
+            <span class="connection-dot" id="disc-status-chatglm"></span>
+          </label>
+        </div>
+
+        <p class="hint">请选择 2 位参与者</p>
+
+        <textarea id="discussion-topic" placeholder="输入讨论主题...&#10;&#10;示例：微服务架构和单体架构各有什么优缺点？" rows="4"></textarea>
+        <button id="start-discussion-btn">开始讨论</button>
+      </section>
+
+      <section class="discussion-active hidden" id="discussion-active">
+        <div class="discussion-header">
+          <div class="discussion-info">
+            <span class="round-badge" id="round-badge">第 1 轮</span>
+            <span class="participants-badge" id="participants-badge">Claude vs ChatGPT</span>
+          </div>
+          <button class="end-btn" id="end-discussion-btn">结束</button>
+        </div>
+        <div class="discussion-topic-display" id="topic-display"></div>
+        <div class="discussion-status" id="discussion-status">
+          等待初始回复...
+        </div>
+        <div class="discussion-interject">
+          <label>插话（同步发送给讨论双方）</label>
+          <textarea id="interject-input" placeholder="输入你想对双方说的话..."></textarea>
+          <div class="interject-actions">
+            <button id="interject-btn">发送给双方</button>
+          </div>
+        </div>
+        <div class="discussion-controls">
+          <button id="next-round-btn" disabled>下一轮</button>
+          <button id="generate-summary-btn" disabled>生成总结</button>
+        </div>
+      </section>
+
+      <section class="discussion-summary hidden" id="discussion-summary">
+        <h3>讨论总结</h3>
+        <div id="summary-content"></div>
+        <button id="new-discussion-btn">新讨论</button>
+      </section>
+    </div><!-- end discussion-mode -->
+
+    <section class="log">
+      <h3>活动日志</h3>
+      <div id="log-container"></div>
+    </section>
+
+    <footer class="copyright">
+      © 2025 <a href="https://axtonliu.ai" target="_blank">Axton Liu</a> · <a href="https://axtonliu.ai"
+        target="_blank">AI 精英学院</a>
+      <br>
+      <span class="editor-credit">2026 Edited by CHOSENX</span>
+    </footer>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+
+</html>
